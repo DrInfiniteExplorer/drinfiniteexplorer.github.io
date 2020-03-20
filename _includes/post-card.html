@@ -1,0 +1,22 @@
+<div class="card">
+    {% if post.image %}
+    <div class="card-image">
+        <img src="{{ post.image }}" alt="{{ post.title }}">
+    </div>
+    {% else %}
+    <header class="card-header">
+        <a class="card-header-title" href="{{ site.baseurl }}{{ post.url }}">{{ post.title}}</a>
+        <footer class="card-footer">
+            <p class="card-footer-item">Published:&nbsp;<a href="https://en.wikipedia.org/wiki/ISO_8601" alt="ISO-8601 for the win" style="color: inherit;text-decoration: inherit">{{ post.date | date: "%F" }}</a></p>
+        </footer>
+    </header>
+    {% endif %}
+    <div class="card-content">
+        <div class="content">
+            {% if post.image %}
+            <a class="title is-4" href="{{ site.baseurl }}{{ post.url }}">{{ post.title}}</a>
+            {% endif %}
+            <p>{{ post.excerpt }}</p>
+        </div>
+    </div>
+</div>

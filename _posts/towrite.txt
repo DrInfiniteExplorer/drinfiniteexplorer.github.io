@@ -1,0 +1,7 @@
+
+Write about 
+* VHDL 2 Factorio
+* VHDL synthesis overview
+* wuxia?
+* Thoughts about hand-terminals & casting
+* 
