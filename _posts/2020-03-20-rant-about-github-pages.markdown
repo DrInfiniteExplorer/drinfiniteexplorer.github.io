@@ -2,7 +2,7 @@
 layout: post
 title:  "Github pages"
 date:   2020-03-20 23:15:01 +0100
-categories: blog github-pages
+tags: blog github-pages
 show_sidebar: true
 
 ---
@@ -57,6 +57,12 @@ bundle update
 ```
 
 There you have it, that's a lot to do to create a handful of boring files.
+
+# Edit 2020-03-21
+
+I have since yesterday abandoned letting github build the site.
+It is now built with jekyll by myself. Github is just the host.
+My main reason for doing it so quickly is because apparently the `github-pages`-gem disables the plugin-functionality of Jekyll.
 
 [gh-pages]: https://pages.github.com/
 [gh-jekyll]: https://help.github.com/en/github/working-with-github-pages/setting-up-a-github-pages-site-with-jekyll

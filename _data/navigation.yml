@@ -1,7 +1,7 @@
 - name: Blog
   link: /blog
-- name: Categories
-  link: /categories
+- name: Tags
+  link: /tags
 
 - name: asd
   link: /asd/

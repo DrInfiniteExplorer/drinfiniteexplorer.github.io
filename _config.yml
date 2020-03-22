@@ -23,24 +23,24 @@ url: "blog.luben.se" # the base hostname & protocol for your site, e.g. http://e
 github_username:  drinfiniteexplorer
 
 # Build settings
-markdown: kramdown
 theme: bulma-clean-theme
 remote_theme: chrisrhymes/bulma-clean-theme
 plugins:
   - jekyll-feed
   - jekyll-paginate
-  - github-pages
 
 #bulma stuff
 paginate: 5
 paginate_path: "/blog/page:num"
 
 
+markdown: kramdown
+
 # https://github.com/jekyll/jekyll/issues/4619#issuecomment-191267346
 kramdown:
+  #parse_block_html: true
   input:          GFM
   syntax_highlighter: rouge
-
   syntax_highlighter_opts:
     css_class: 'highlight'
     default_lang: bash

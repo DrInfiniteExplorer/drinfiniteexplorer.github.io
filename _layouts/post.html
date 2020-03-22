@@ -6,29 +6,29 @@ layout: default
 <div class="content">
 
     <p>Published: {{ page.date | date: "%b %-d, %Y" }} {% if page.author %} by {{ page.author }} {% endif %}</p>
-
-<div class="post-categories tags">
-    Categories:&nbsp;
-  {% if post %}
-    {% assign categories = post.categories %}
-  {% else %}
-    {% assign categories = page.categories %}
-  {% endif %}
-  {% for category in categories %}
-  <a href="{{site.baseurl}}/categories/#{{category|slugize}}">{{category}}</a>
-  {% unless forloop.last %}&nbsp;{% endunless %}
-  {% endfor %}
+    
+<div class="tags">
+    Tags:&nbsp;
+    {% for tag in page.tags %}
+    <a href="{{site.baseurl}}/tags/#{{tag|slugize}}"><span class="tag is-primary">{{ tag }}</span></a>&nbsp;
+    {% endfor %}
 </div>
     
     
     {{ content }}
 </div>
 
-<div class="tags">
-    {% for tag in page.tags %}
-    <span class="tag is-primary">{{ tag }}</span>
+<div class="">
+    {% assign asd = content | extract_href | group_by:"url"%}
+
+    <b>Links in this post:</b>
+    <ul>
+    {%for group in asd %}
+    <li><a href="{{group.items[0].url}}">{{group.items[0].text}}</a></li>
     {% endfor %}
+    </ul>
 </div>
+
 
 {% if site.disqus.shortname %}
   {% include disqus.html %}
