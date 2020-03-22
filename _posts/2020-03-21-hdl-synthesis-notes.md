@@ -54,7 +54,7 @@ Click here to view the corresponding VHDL
 </summary>
 {:/nomarkdown}
 
-```
+```vhdl
 -- this is the entity
 entity Magic is
   port ( 
@@ -98,6 +98,7 @@ end architecture RTL;
 
 {::nomarkdown}
 </details>
+<br>
 {:/nomarkdown}
 
 Now, as basic logic like AND, OR, NOT, etc is very common building blocks, we there is language support for being able to express that without expicitly declaring all internal" chips and connections they require. A functional equivalent would be 
@@ -117,7 +118,7 @@ Click here to view the corresponding VHDL
 </summary>
 {:/nomarkdown}
 
-```VHDL
+```vhdl
 -- this is the entity
 entity Magic is
   port ( 
@@ -135,6 +136,7 @@ end architecture RTL;
 
 {::nomarkdown}
 </details>
+<br>
 {:/nomarkdown}
 
 
