@@ -28,6 +28,7 @@ remote_theme: chrisrhymes/bulma-clean-theme
 plugins:
   - jekyll-feed
   - jekyll-paginate
+  - gemoji
 
 #bulma stuff
 paginate: 5

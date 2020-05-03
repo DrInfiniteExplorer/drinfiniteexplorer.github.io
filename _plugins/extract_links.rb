@@ -1,13 +1,19 @@
+require 'emoji'
+
 # https://stackoverflow.com/a/25802375
 module Jekyll
   module ExtractLinks
+  def extract_external_href(input)
+    asd = extract_href(input)
+    asd.select {|v| !v['url'].start_with?("#")}
+  end
     def extract_href(input)
     # https://stackoverflow.com/a/15926317
       #re = Regexp.new "<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1"
       
       asd = input.scan(/<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1[^>]*>([^<]*)</).map { |x| { 'url' => x[1], 'text' => x[2]} }
       
-      print(asd)
+      #print(asd)
       asd
       
       # This will be returned

@@ -1,0 +1,21 @@
+#toc {
+  float: right;
+  width: 40%;
+  background: #eee;
+  font-size: 0.8em;
+  padding: 1em 2em;
+  margin: 0 0 0.5em 0.5em;
+}
+#toc ul {
+  padding: 0;
+}
+#toc li {
+  margin: 0 0 0.25em 0;
+}
+#toc a {
+  text-decoration: none;
+}
+#toc a:hover,
+#toc a:active {
+  text-decoration: underline;
+}

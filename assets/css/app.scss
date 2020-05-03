@@ -1,0 +1,26 @@
+---
+---
+@import "main";
+
+@import "toc";
+
+.invisible {
+  visibility: hidden;
+}
+
+.img-host {
+  position: relative;
+  display:inline-block;
+}
+
+.img-host img {
+  display:block;
+}
+
+.img-host > p {
+
+margin:0px !important;
+padding:0px;
+}
+
+//@import "{{ site.theme }}";
