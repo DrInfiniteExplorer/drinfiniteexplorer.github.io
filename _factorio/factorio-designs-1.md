@@ -4,7 +4,7 @@ title:  "Factorio designs, pt 1"
 date:   2020-04-29 18:25 +0100
 tags: factorio
 show_sidebar: true
-draft: true
+draft: false
 permalink: /factorio/design-1
 alias: [/2020/04/29/factorio-designs-1.html]
 hero_image: /assets/img/factorio-banner.png

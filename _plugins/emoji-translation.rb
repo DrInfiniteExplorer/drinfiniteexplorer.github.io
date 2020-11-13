@@ -1,5 +1,6 @@
 
 require "gemoji"
+require "json"
 
 module Hacky
 
@@ -17,6 +18,8 @@ module Hacky
       site.pages.each { |p| substitute(p, additional_keys) }
 
       (site.posts.respond_to?(:docs) ? site.posts.docs : site.posts ).each { |p| substitute(p, additional_keys) }
+      print(site.documents)
+      site.documents.each { |p| substitute(p, additional_keys) }
     end
 
 
