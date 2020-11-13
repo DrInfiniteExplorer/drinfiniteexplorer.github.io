@@ -1,0 +1,454 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Building & flashing Ender5 Pro firmware - Siffer</title>
+    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="shortcut icon" type="image/png"
+           href="/favicon.png" 
+    />
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Building &amp; flashing Ender5 Pro firmware | Siffer</title>
+<meta name="generator" content="Jekyll v3.8.6" />
+<meta property="og:title" content="Building &amp; flashing Ender5 Pro firmware" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="So I went and bought and Ender5 Pro to learn how to 3d-print stuff." />
+<meta property="og:description" content="So I went and bought and Ender5 Pro to learn how to 3d-print stuff." />
+<link rel="canonical" href="blog.luben.se/2020/11/07/ender5-pro-firmware.html" />
+<meta property="og:url" content="blog.luben.se/2020/11/07/ender5-pro-firmware.html" />
+<meta property="og:site_name" content="Siffer" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-11-07T16:30:00+01:00" />
+<script type="application/ld+json">
+{"mainEntityOfPage":{"@type":"WebPage","@id":"blog.luben.se/2020/11/07/ender5-pro-firmware.html"},"@type":"BlogPosting","url":"blog.luben.se/2020/11/07/ender5-pro-firmware.html","headline":"Building &amp; flashing Ender5 Pro firmware","dateModified":"2020-11-07T16:30:00+01:00","datePublished":"2020-11-07T16:30:00+01:00","description":"So I went and bought and Ender5 Pro to learn how to 3d-print stuff.","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<!-- head scripts --></head>
+
+  <body>
+    
+<nav class="navbar is-primary" >
+    <div class="container">
+        <div class="navbar-brand">
+            <a href="/" class="navbar-item">
+                Siffer
+            </a>
+            <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navMenu">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        <div class="navbar-menu" id="navMenu">
+            <div class="navbar-start">
+                <a href="/" class="navbar-item ">Home</a>
+                
+                
+                    
+                    <a href="/blog" class="navbar-item ">Blog</a>
+                    
+                
+                    
+                    <a href="/tags" class="navbar-item ">Tags</a>
+                    
+                
+                    
+                    <a href="/factorio" class="navbar-item ">Factorio</a>
+                    
+                
+                
+            </div>
+
+            <div class="navbar-end">
+                
+            </div>
+
+        </div>
+    </div>
+</nav>
+
+    
+        <section class="hero  is-medium  is-bold is-primary" >
+    <div class="hero-body ">
+        <div class="container">
+            <p class="title is-2">Building & flashing Ender5 Pro firmware</p>
+            <p class="subtitle is-3"></p>
+            
+        </div>
+    </div>
+</section>
+    
+    
+
+
+    <section class="section">
+        <div class="container">
+            <div class="columns">
+                
+                <div class="column is-8">
+                    
+                    
+                    
+                    <div class="content">
+
+    <p>Published: 2020-11-07 </p>
+    
+<div class="tags">
+    Tags:&nbsp;
+    
+    <a href="/tags/#3dp"><span class="tag is-primary">3dp</span></a>&nbsp;
+    
+    <a href="/tags/#ender5"><span class="tag is-primary">ender5</span></a>&nbsp;
+    
+    <a href="/tags/#fw"><span class="tag is-primary">fw</span></a>&nbsp;
+    
+    <a href="/tags/#octoprint"><span class="tag is-primary">octoprint</span></a>&nbsp;
+    
+</div>
+
+    <p>So I went and bought and Ender5 Pro to learn how to 3d-print stuff.</p>
+
+<p>Unfortunately my bed (the thing you print on) is <em>warped</em>, which leads to bad print results.
+The printer expects the bed to be without curvature and to have an even distance to the extruder.
+For me and many other owners of Ender5 (Pro), the stock bed has slightly raised edges (or a lower center).</p>
+
+<p>Most videos and guides for how to deal with this on the internet just says to perform <a href="https://all3dp.com/2/mesh-bed-leveling-all-you-need-to-know/">Mesh bed leveling</a>.</p>
+
+<p>Unfortunately the stock firmware is old and does not contain this feature, so we need to build our own.
+The stock firmware version for me was <code class="language-bash highlighter-rouge">1.1.6.3</code>, but I’m building version <code class="language-bash highlighter-rouge">2.0.7.2</code>.</p>
+
+<ul>
+  <li>The stock firmware is called <a href="https://github.com/MarlinFirmware/Marlin">Marlin</a></li>
+  <li>The control board we flash is called <a href="https://reprap.org/wiki/Melzi">Melzi</a>. The actual board seems to be a Creality-specific version as it looks different from what is on that wiki. (mine is version 1.1.5, which is printed on the PCB)</li>
+  <li>I’m using <a href="https://marlinfw.org/docs/basics/install_platformio_cli.html">PlatformIO</a> to build the FW</li>
+  <li>Using an <a href="https://octoprint.org/">OctoPi</a> with the <a href="https://plugins.octoprint.org/plugins/firmwareupdater/">Firmware updater</a> plugin
+    <ul>
+      <li>This also requires you to install <code class="language-bash highlighter-rouge">avrdude</code> with <code class="language-bash highlighter-rouge"><span class="nb">sudo </span>apt-get <span class="nb">install </span>avrdude</code> (on the octopi)</li>
+    </ul>
+  </li>
+</ul>
+
+<p>I downloaded the 2.0.x sources from <a href="https://marlinfw.org/docs/basics/install.html">this site</a> and decided to do a command-line build with <a href="https://marlinfw.org/docs/basics/install_platformio_cli.html">PlatformIO</a> instead of the more common vscode/arduino-studio-alternatives.
+First I started with arduino studio through <a href="https://github.com/tombenke/darduino">Darduino</a> but clicking interfaces blindly is not my style, so I adapted the dockerfile and shell-script for <a href="https://marlinfw.org/docs/basics/install_platformio_cli.html">PlatformIO</a> instead. You can find my modified files at the end of this post.</p>
+
+<p>When the docker is built and running, we need to configure the firmware for the board.
+Download a pair of “standard” <a href="https://github.com/MarlinFirmware/Configurations/tree/import-2.0.x/config/examples/Creality/Ender-5%20Pro/CrealityV1">Ender5 Pro config files</a> from github and put into the <code class="language-bash highlighter-rouge">Marlin</code> directory (overwrite/replace the existing <code class="language-bash highlighter-rouge">Configuration.h</code> and <code class="language-bash highlighter-rouge">Configuration_adv.h</code>).</p>
+
+<p>Then browse to the Marlin root directory (which contains <code class="language-bash highlighter-rouge">platformio.ini</code>) and run <code class="language-bash highlighter-rouge">platformio run <span class="nt">-e</span> melzi_optimized</code> to build the firmware.
+The resulting hex-file can be found in <code class="language-bash highlighter-rouge">./.pio/build/melzi_optimized/firmware.hex</code> and is needed for OctoPi.</p>
+
+<p>The OctoPi-plugin needs to be configured with the right programmer and CPU.</p>
+
+<p><img src="/assets/img/3dp/octopi/fw-plugin-config.gif" alt="FW-plugin-config" /></p>
+
+<p>Then you just select the hex-file and flash. Wooh!</p>
+
+<p>Before I started hacking with mesh bed leveling configuration, I made sure to verify that this flashed and ran properly.</p>
+
+<p>Then we <em>just</em> have to configure the firmware for our usecase.
+<a href="https://marlinfw.org/docs/gcode/G029.html">G29 - Bed Leveling documentation</a> goes into details about different schemes, how to configure them, and how to use them.</p>
+
+<p>I’ve decided to go for manual bed leveling, with 5x5 measurement points, and LCD menu to help out measurements.</p>
+
+<ul>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define MESH_BED_LEVELING</span></code></li>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define RESTORE_LEVELING_AFTER_G28</span></code> to not loose config after auto-home</li>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define GRID_MAX_POINTS_X 5</span></code> inside the proper ifdef</li>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define LCD_BED_LEVELING</span></code></li>
+</ul>
+
+<p>But unfortunately this makes the firmware to large. We need to remove some features to make it small enough for our needs.</p>
+
+<p>Teaching Tech details some thins to turn off in this video about <a href="https://youtu.be/sUlqrSq6LeY?t=526">BLTouch in Ender3</a>.
+Great videos, but I want data easily accessible so I’m listing what can be configured here:</p>
+
+<ul>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define SPEAKER</span></code> - Not removed</li>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define SHOW_BOOTSCREEN</span></code> - Removed</li>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define ARC_SUPPORT</span></code> in <code class="language-bash highlighter-rouge">Condifuration_adv.h</code> - Not removed, non-linear movements are cool AF</li>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define DISABLE_M503</span></code> - Already removed</li>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define EEPROM_CHITCHAT</span></code> - Not removed</li>
+  <li><code class="language-bash highlighter-rouge"><span class="c">#define SLIM_LCD_MENUS</span></code> - Enabled</li>
+</ul>
+
+<p>After having flashed this I preheated for PLA(Cause temperature and size) and performed “manual” leveling of the bed, in an attempt to orient the bed before doing mesh leveling.</p>
+
+<p>Then I did a leveling using the LCD and boy is the bed not level!</p>
+
+<p>After storing the settings I ran <code class="language-bash highlighter-rouge">G29 S0</code> via OctoPi to get a printout of the measured bed values.
+This will enable me to quickly restore them, should I need to wipe EEPROM sometime.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="rouge-code"><pre>Send: G29 S0
+Recv: Mesh Bed Leveling OFF
+Recv: 5x5 mesh. Z offset: 0.00000
+Recv: Measured points:
+Recv:         0        1        2        3        4
+Recv:  0 <span class="nt">-0</span>.07500 <span class="nt">-0</span>.12500 <span class="nt">-0</span>.12500 <span class="nt">-0</span>.12500 <span class="nt">-0</span>.02500
+Recv:  1 <span class="nt">-0</span>.07500 <span class="nt">-0</span>.12500 <span class="nt">-0</span>.12500 <span class="nt">-0</span>.12500 <span class="nt">-0</span>.02500
+Recv:  2 <span class="nt">-0</span>.07500 <span class="nt">-0</span>.12500 <span class="nt">-0</span>.15000 <span class="nt">-0</span>.12500 <span class="nt">-0</span>.00000
+Recv:  3 <span class="nt">-0</span>.05000 <span class="nt">-0</span>.15000 <span class="nt">-0</span>.17500 <span class="nt">-0</span>.15000 <span class="nt">-0</span>.02500
+Recv:  4 <span class="nt">-0</span>.05000 <span class="nt">-0</span>.17500 <span class="nt">-0</span>.22500 <span class="nt">-0</span>.20000 <span class="nt">-0</span>.05000
+Recv: 
+Recv: X:220.00 Y:220.00 Z:0.00 E:0.00 Count X:17600 Y:17600 Z:0
+Recv: ok
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Ayy lmao no wonder my initial prints didn’t look too good.</p>
+
+<details>
+<summary>
+Dockerfile
+</summary>
+
+<div class="language-docker highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+</pre></td><td class="rouge-code"><pre><span class="k">FROM</span><span class="s"> ubuntu:16.04</span>
+
+<span class="k">ENV</span><span class="s"> HOME /home/developer</span>
+<span class="k">WORKDIR</span><span class="s"> /home/developer</span>
+
+<span class="c"># Replace 1000 with your user / group id</span>
+<span class="k">RUN </span><span class="nb">export </span><span class="nv">uid</span><span class="o">=</span>1000 <span class="nv">gid</span><span class="o">=</span>1000 <span class="o">&amp;&amp;</span> <span class="se">\
+</span>    <span class="nb">mkdir</span> <span class="nt">-p</span> /home/developer <span class="o">&amp;&amp;</span> <span class="se">\
+</span>    <span class="nb">mkdir</span> <span class="nt">-p</span> /etc/sudoers.d <span class="o">&amp;&amp;</span> <span class="se">\
+</span>    <span class="nb">echo</span> <span class="s2">"developer&lt;img class='emoji' title='x' alt='x' src='https://github.githubassets.com/images/icons/emoji/x.png' height='32' width='32' align='absmiddle' &gt;</span><span class="k">${</span><span class="nv">uid</span><span class="k">}</span><span class="s2">:</span><span class="k">${</span><span class="nv">gid</span><span class="k">}</span><span class="s2">:Developer,,,:/home/developer:/bin/bash"</span> <span class="o">&gt;&gt;</span> /etc/passwd <span class="o">&amp;&amp;</span> <span class="se">\
+</span>    <span class="nb">echo</span> <span class="s2">"developer&lt;img class='emoji' title='x' alt='x' src='https://github.githubassets.com/images/icons/emoji/x.png' height='32' width='32' align='absmiddle' &gt;</span><span class="k">${</span><span class="nv">uid</span><span class="k">}</span><span class="s2">:"</span> <span class="o">&gt;&gt;</span> /etc/group <span class="o">&amp;&amp;</span> <span class="se">\
+</span>    <span class="nb">echo</span> <span class="s2">"developer ALL=(ALL) NOPASSWD: ALL"</span> <span class="o">&gt;</span> /etc/sudoers.d/developer <span class="o">&amp;&amp;</span> <span class="se">\
+</span>    <span class="nb">chmod </span>0440 /etc/sudoers.d/developer <span class="o">&amp;&amp;</span> <span class="se">\
+</span>    <span class="nb">chown</span> <span class="k">${</span><span class="nv">uid</span><span class="k">}</span>:<span class="k">${</span><span class="nv">gid</span><span class="k">}</span> <span class="nt">-R</span> /home/developer <span class="o">&amp;&amp;</span> <span class="se">\
+</span>    apt-get update <span class="se">\
+</span>	<span class="o">&amp;&amp;</span> apt-get <span class="nb">install</span> <span class="nt">-y</span> <span class="se">\
+</span>        software-properties-common 
+
+<span class="k">RUN </span>apt <span class="nb">install</span> <span class="nt">-y</span> python3-pip python3-tk
+<span class="k">RUN </span>pip3 <span class="nb">install</span> <span class="nt">-U</span> platformio
+
+<span class="k">ENV</span><span class="s"> LC_ALL C.UTF-8</span>
+<span class="k">ENV</span><span class="s"> LANG C.UTF-8</span>
+<span class="k">ENV</span><span class="s"> DISPLAY :1.0</span>
+
+<span class="k">USER</span><span class="s"> developer</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+</details>
+<br>
+
+
+<details>
+<summary>
+platformio.sh
+</summary>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td><td class="rouge-code"><pre><span class="c">#!/bin/bash</span>
+
+docker build <span class="nt">-t</span> yolo:yeet <span class="nb">.</span> <span class="o">&amp;&amp;</span> <span class="se">\</span>
+docker run <span class="se">\</span>
+    <span class="nt">-it</span> <span class="se">\</span>
+    <span class="nt">--rm</span> <span class="se">\</span>
+    <span class="nt">-e</span> <span class="nv">DISPLAY</span><span class="o">=</span><span class="nv">$DISPLAY</span> <span class="se">\</span>
+    <span class="nt">-v</span> /tmp/.X11-unix:/tmp/.X11-unix <span class="se">\</span>
+    <span class="nt">-v</span> /dev:/dev <span class="se">\</span>
+    <span class="nt">-v</span> <span class="nv">$HOME</span>/topics:/topics <span class="se">\</span>
+    <span class="nt">-v</span> <span class="nv">$HOME</span>/topics/platformio:/home/developer/platformio <span class="se">\</span>
+    <span class="nt">--name</span> platformio <span class="se">\</span>
+    yolo:yeet
+    
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+</details>
+<br>
+
+<p>Other sources:</p>
+
+<p><a href="https://www.youtube.com/watch?v=aQIg9zxuCvM">Teaching Techs guide</a></p>
+
+
+</div>
+
+<div class="">
+      
+
+
+    <b>Links in this post:</b>
+    <ul>
+    
+    <li><a href="https://all3dp.com/2/mesh-bed-leveling-all-you-need-to-know/">Mesh bed leveling</a></li>
+    
+    <li><a href="https://github.com/MarlinFirmware/Marlin">Marlin</a></li>
+    
+    <li><a href="https://reprap.org/wiki/Melzi">Melzi</a></li>
+    
+    <li><a href="https://marlinfw.org/docs/basics/install_platformio_cli.html">PlatformIO</a></li>
+    
+    <li><a href="https://octoprint.org/">OctoPi</a></li>
+    
+    <li><a href="https://plugins.octoprint.org/plugins/firmwareupdater/">Firmware updater</a></li>
+    
+    <li><a href="https://marlinfw.org/docs/basics/install.html">this site</a></li>
+    
+    <li><a href="https://github.com/tombenke/darduino">Darduino</a></li>
+    
+    <li><a href="https://github.com/MarlinFirmware/Configurations/tree/import-2.0.x/config/examples/Creality/Ender-5%20Pro/CrealityV1">Ender5 Pro config files</a></li>
+    
+    <li><a href="https://marlinfw.org/docs/gcode/G029.html">G29 - Bed Leveling documentation</a></li>
+    
+    <li><a href="https://youtu.be/sUlqrSq6LeY?t=526">BLTouch in Ender3</a></li>
+    
+    <li><a href="https://www.youtube.com/watch?v=aQIg9zxuCvM">Teaching Techs guide</a></li>
+    
+    </ul>
+</div>
+
+
+
+                </div>
+                
+                <div class="column is-4-desktop is-12-tablet">
+                    <p class="title is-4">Latest Posts</p>
+
+<div class="columns is-multiline">
+    
+    <div class="column is-12">
+        <div class="card">
+    
+    <header class="card-header">
+        <a class="card-header-title" href="/2020/11/07/ender5-pro-firmware.html">Building & flashing Ender5 Pro firmware</a>
+        <footer class="card-footer">
+            <nobr>
+                <p class="card-footer-item">Published:&nbsp;<a href="https://en.wikipedia.org/wiki/ISO_8601" alt="ISO-8601 for the win" style="color: inherit;text-decoration: inherit">2020-11-07</a></p>
+            </nobr>
+        </footer>
+    </header>
+    
+    <div class="card-content">
+        <div class="content">
+            
+            <p><p>So I went and bought and Ender5 Pro to learn how to 3d-print stuff.</p>
+
+</p>
+        </div>
+    </div>
+</div>
+    </div>
+    
+    <div class="column is-12">
+        <div class="card">
+    
+    <header class="card-header">
+        <a class="card-header-title" href="/2020/05/11/windows-containers.html">Windows Container notes</a>
+        <footer class="card-footer">
+            <nobr>
+                <p class="card-footer-item">Published:&nbsp;<a href="https://en.wikipedia.org/wiki/ISO_8601" alt="ISO-8601 for the win" style="color: inherit;text-decoration: inherit">2020-05-11</a></p>
+            </nobr>
+        </footer>
+    </header>
+    
+    <div class="card-content">
+        <div class="content">
+            
+            <p><p>Today was the day during which I was going to get going with <a href="https://github.com/ghdl/ghdl-yosys-plugin">ghdl</a>.</p>
+
+</p>
+        </div>
+    </div>
+</div>
+    </div>
+    
+    <div class="column is-12">
+        <div class="card">
+    
+    <header class="card-header">
+        <a class="card-header-title" href="/2020/03/22/jekyll-kramdown-in-details.html">Markdown in &lt;details&gt;</a>
+        <footer class="card-footer">
+            <nobr>
+                <p class="card-footer-item">Published:&nbsp;<a href="https://en.wikipedia.org/wiki/ISO_8601" alt="ISO-8601 for the win" style="color: inherit;text-decoration: inherit">2020-03-22</a></p>
+            </nobr>
+        </footer>
+    </header>
+    
+    <div class="card-content">
+        <div class="content">
+            
+            <p><p>Today I’ve polished the blog a bit and found out some stuff.</p>
+
+</p>
+        </div>
+    </div>
+</div>
+    </div>
+    
+</div>
+
+                </div>
+                
+            </div>
+        </div>
+    </section>
+    
+        <footer class="footer">
+    <div class="container">
+        
+        
+
+        <div class="content is-small has-text-centered">
+            <p class="">Theme built by <a href="https://www.csrhymes.com">C.S. Rhymes</a></p>
+        </div>
+    </div>
+</footer>
+
+    
+    <script src="/assets/js/app.js" type="text/javascript"></script><!-- footer scripts --></body>
+</html>
