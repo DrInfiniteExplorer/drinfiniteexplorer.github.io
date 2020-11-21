@@ -4,26 +4,26 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Markdown in &lt;details&gt; - Siffer</title>
+    <title>Bed level script - Siffer</title>
     <link rel="stylesheet" href="/assets/css/app.css">
     <link rel="shortcut icon" type="image/png"
            href="/favicon.png" 
     />
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
     <!-- Begin Jekyll SEO tag v2.6.1 -->
-<title>Markdown in &lt;details&gt; | Siffer</title>
+<title>Bed level script | Siffer</title>
 <meta name="generator" content="Jekyll v3.8.6" />
-<meta property="og:title" content="Markdown in &lt;details&gt;" />
+<meta property="og:title" content="Bed level script" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="Today I’ve polished the blog a bit and found out some stuff." />
-<meta property="og:description" content="Today I’ve polished the blog a bit and found out some stuff." />
-<link rel="canonical" href="blog.luben.se/2020/03/22/jekyll-kramdown-in-details.html" />
-<meta property="og:url" content="blog.luben.se/2020/03/22/jekyll-kramdown-in-details.html" />
+<meta name="description" content="I’ve written a tool to adjust bed-level-data easier." />
+<meta property="og:description" content="I’ve written a tool to adjust bed-level-data easier." />
+<link rel="canonical" href="blog.luben.se/2020/11/21/bed-level-script.html" />
+<meta property="og:url" content="blog.luben.se/2020/11/21/bed-level-script.html" />
 <meta property="og:site_name" content="Siffer" />
 <meta property="og:type" content="article" />
-<meta property="article:published_time" content="2020-03-22T03:10:00+01:00" />
+<meta property="article:published_time" content="2020-11-21T17:00:00+01:00" />
 <script type="application/ld+json">
-{"mainEntityOfPage":{"@type":"WebPage","@id":"blog.luben.se/2020/03/22/jekyll-kramdown-in-details.html"},"@type":"BlogPosting","url":"blog.luben.se/2020/03/22/jekyll-kramdown-in-details.html","headline":"Markdown in &lt;details&gt;","dateModified":"2020-03-22T03:10:00+01:00","datePublished":"2020-03-22T03:10:00+01:00","description":"Today I’ve polished the blog a bit and found out some stuff.","@context":"https://schema.org"}</script>
+{"mainEntityOfPage":{"@type":"WebPage","@id":"blog.luben.se/2020/11/21/bed-level-script.html"},"@type":"BlogPosting","url":"blog.luben.se/2020/11/21/bed-level-script.html","headline":"Bed level script","dateModified":"2020-11-21T17:00:00+01:00","datePublished":"2020-11-21T17:00:00+01:00","description":"I’ve written a tool to adjust bed-level-data easier.","@context":"https://schema.org"}</script>
 <!-- End Jekyll SEO tag -->
 <!-- head scripts --></head>
 
@@ -73,7 +73,7 @@
         <section class="hero  is-medium  is-bold is-primary" >
     <div class="hero-body ">
         <div class="container">
-            <p class="title is-2">Markdown in &lt;details&gt;</p>
+            <p class="title is-2">Bed level script</p>
             <p class="subtitle is-3"></p>
             
         </div>
@@ -93,72 +93,22 @@
                     
                     <div class="content">
 
-    <p>Published: 2020-03-22 </p>
+    <p>Published: 2020-11-21 </p>
     
 <div class="tags">
     Tags:&nbsp;
     
-    <a href="/tags/#blog"><span class="tag is-primary">blog</span></a>&nbsp;
+    <a href="/tags/#3dp"><span class="tag is-primary">3dp</span></a>&nbsp;
     
-    <a href="/tags/#jekyll"><span class="tag is-primary">jekyll</span></a>&nbsp;
+    <a href="/tags/#ender5"><span class="tag is-primary">ender5</span></a>&nbsp;
     
 </div>
 
-    <p>Today I’ve polished the blog a bit and found out some stuff.</p>
+    <p>I’ve written a tool to adjust bed-level-data easier.</p>
 
-<p>I learned about the HTML5 <a href="https://www.w3schools.com/tags/tag_details.asp">&lt;details&gt; tag</a> when I searched for a simple way to make collapsible code
- (which is great for illustrative purposes, but can get in the way of the main point you want to convey).</p>
+<p>In my previous post I wrote about building Marling FW with bed leveling. Since then I’ve done a lot of test-prints, and realized that it is kinda hard to do properly.</p>
 
-<p>But I ran into some problems; The markdown inside the <code class="language-bash highlighter-rouge">&lt;details&gt;</code> tag didn’t render.</p>
-
-<p>Some people suggested to add</p>
-
-<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
-2
-3
-</pre></td><td class="rouge-code"><pre><span class="na">markdown</span><span class="pi">:</span> <span class="s">kramdown</span>
-<span class="na">kramdown</span><span class="pi">:</span>
-  <span class="na">parse_block_html</span><span class="pi">:</span> <span class="no">true</span>
-</pre></td></tr></tbody></table></code></pre></div></div>
-
-<p>to the <code class="language-bash highlighter-rouge">_config.yml</code> file <strong>but this was <em>bad</em></strong>!</p>
-
-<p>This is to apply a <a href="https://devblogs.microsoft.com/oldnewthing/20081211-00/?p=19873">global solution to a local problem</a>, which is never the solution you want to try first.</p>
-
-<p>I did try it, and it still made a big mess of things!</p>
-
-<p>A little extra digging and I found out that you can do</p>
-
-<pre><code class="language-none">{::nomarkdown}
-&lt;details&gt;
-&lt;summary&gt;This is an example&lt;/summary&gt;
-{:/nomarkdown}
-
-```python
-print("example yo")
-```
-
-{::nomarkdown}
-&lt;/details&gt;
-&lt;br&gt;
-{:/nomarkdown}
-</code></pre>
-
-<p>which just disables the markdown processor enough to let me add the raw html needed.</p>
-
-<p>And hey, here is that exact demo!</p>
-
-<details>
-<summary>This is an example</summary>
-
-<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
-</pre></td><td class="rouge-code"><pre><span class="k">print</span><span class="p">(</span><span class="s">"example yo"</span><span class="p">)</span>
-</pre></td></tr></tbody></table></code></pre></div></div>
-
-</details>
-<br>
-
-<p>Pretty neat.</p>
+<p>So I wrote a simple tool to adjust and iterate on the mesh easier. It is available on github in the <a href="https://github.com/DrInfiniteExplorer/adjust_bed">Level_Adjust</a>-repository.</p>
 
 
 </div>
@@ -170,9 +120,7 @@ print("example yo")
     <b>Links in this post:</b>
     <ul>
     
-    <li><a href="https://www.w3schools.com/tags/tag_details.asp">&lt;details&gt; tag</a></li>
-    
-    <li><a href="https://devblogs.microsoft.com/oldnewthing/20081211-00/?p=19873">global solution to a local problem</a></li>
+    <li><a href="https://github.com/DrInfiniteExplorer/adjust_bed">Level_Adjust</a></li>
     
     </ul>
 </div>
