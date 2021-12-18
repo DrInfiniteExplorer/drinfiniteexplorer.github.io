@@ -4,6 +4,7 @@ title:  "Bed level script"
 date:   2020-11-21 17:00 +0100
 tags: 3dp ender5 
 show_sidebar: true
+hero_height: is-small
 
 ---
 

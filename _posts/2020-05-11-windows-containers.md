@@ -4,6 +4,7 @@ title:  "Windows Container notes"
 date:   2020-05-11 00:50 +0100
 tags: notes
 show_sidebar: true
+hero_height: is-small
 
 ---
 

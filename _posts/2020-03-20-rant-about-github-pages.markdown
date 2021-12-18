@@ -4,6 +4,7 @@ title:  "Github pages"
 date:   2020-03-20 23:15:01 +0100
 tags: blog github-pages
 show_sidebar: true
+hero_height: is-small
 
 ---
 

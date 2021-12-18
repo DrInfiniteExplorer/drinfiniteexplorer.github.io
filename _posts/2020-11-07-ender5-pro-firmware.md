@@ -4,6 +4,7 @@ title:  "Building & flashing Ender5 Pro firmware"
 date:   2020-11-07 16:30 +0100
 tags: 3dp ender5 fw octoprint
 show_sidebar: true
+hero_height: is-small
 
 ---
 

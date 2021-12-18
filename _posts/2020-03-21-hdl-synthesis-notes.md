@@ -4,6 +4,7 @@ title:  "HDL synthezis notes"
 date:   2020-03-21 16:30 +0100
 tags: hdl-synthezis vhdl
 show_sidebar: true
+hero_height: is-small
 
 ---
 

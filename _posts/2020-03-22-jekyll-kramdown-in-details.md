@@ -4,6 +4,7 @@ title:  "Markdown in &lt;details&gt;"
 date:   2020-03-22 03:10 +0100
 tags: blog jekyll
 show_sidebar: true
+hero_height: is-small
 
 ---
 
