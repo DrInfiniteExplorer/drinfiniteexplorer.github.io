@@ -879,6 +879,7 @@ Or! OR! You can spend a few hours writing some crap that does it for you, automa
     <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></td></tr></tbody></table></code></pre></div></div>
+
 <p></details></p>
 
 <h3 id="python3">Python3</h3>
@@ -933,7 +934,7 @@ Or! OR! You can spend a few hours writing some crap that does it for you, automa
   <span class="n">ip</span> <span class="o">=</span> <span class="n">socket</span><span class="p">.</span><span class="n">gethostbyname_ex</span><span class="p">(</span><span class="n">socket</span><span class="p">.</span><span class="n">gethostname</span><span class="p">())[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
   <span class="n">usbip</span> <span class="o">=</span> <span class="s">"/usr/lib/linux-tools/5.4.0-77-generic/usbip"</span>
 
-  <span class="n">get_busid_cmd</span> <span class="o">=</span> <span class="s">f"</span><span class="si">{</span><span class="n">usbip</span><span class="si">}</span><span class="s"> list -r </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s"> | grep </span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s"> | cut -f 1 -d : | awk ''"</span>
+  <span class="n">get_busid_cmd</span> <span class="o">=</span> <span class="s">f"</span><span class="si">{</span><span class="n">usbip</span><span class="si">}</span><span class="s"> list -r </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s"> | grep </span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s"> | cut -f 1 -d : | awk '{{$1=$1;print}}'"</span>
   <span class="n">attach_cmd</span> <span class="o">=</span> <span class="s">f"</span><span class="si">{</span><span class="n">usbip</span><span class="si">}</span><span class="s"> attach -r </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s"> --busid $(</span><span class="si">{</span><span class="n">get_busid_cmd</span><span class="si">}</span><span class="s">)"</span>
   <span class="k">print</span><span class="p">(</span><span class="n">get_busid_cmd</span><span class="p">)</span>
   <span class="k">print</span><span class="p">(</span><span class="n">attach_cmd</span><span class="p">)</span>
