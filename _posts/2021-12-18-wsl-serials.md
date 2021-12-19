@@ -136,7 +136,7 @@ Build with `gcc main.cpp -o main.exe -lole32`, or however you want to, I'm not y
 ### C++
 
 {::nomarkdown}<details><summary>CLICK TO EXPAND C++ code for automation</summary>{:/nomarkdown} 
-
+{% raw  %}
 ```c++
 // RegisterDeviceNotification.cpp
 #include <windows.h>
@@ -447,11 +447,13 @@ int __stdcall _tWinMain(
     return 1;
 }
 ```
+{% endraw  %}
 {::nomarkdown}</details>{:/nomarkdown}
 
 ### Python3
 
 {::nomarkdown}<details><summary>CLICK TO EXPAND Python3 code.</summary>{:/nomarkdown} 
+{% raw  %}
 
 ```python
 import sys
@@ -490,6 +492,7 @@ if __name__ == '__main__':
   main()
 
 ```
+{% endraw  %}
 
 {::nomarkdown}</details>{:/nomarkdown}
 
