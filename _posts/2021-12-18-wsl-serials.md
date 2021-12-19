@@ -132,6 +132,7 @@ I started a [auto-attach discussion](https://github.com/dorssel/usbipd-win/discu
 
 Build with `gcc main.cpp -o main.exe -lole32`, or however you want to, I'm not your daddy, you can take care of yourself, I'm proud of you son.
 
+The code is available on github, in the [shitty_usbipd-win_wsl_autoattacher](https://github.com/DrInfiniteExplorer/shitty_usbipd-win_wsl_autoattacher) repo.
 
 ### C++
 
