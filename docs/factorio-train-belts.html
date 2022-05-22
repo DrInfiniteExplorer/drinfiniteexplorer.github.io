@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Trains as belts? - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Belts have a maximum throughput of 45 items, per tile, per second.</p>
+<p>What about trains?</p>
+<p><img alt="yolo" src="factorio-train-belt-straight.png" /></p>
+<p>Trains can be stacked on 2 vertical/horizontal track pieces, or 3 diagonal ones.</p>
+<p>When stacked on axis-aligned tracks, you can add 4 stack inserters between them. That's a hefty throughput of <code>4*12*2.31=110.88</code> items per second.
+A track is two tiles wide, so per-tile it'd still reduce by a factor of 2 =&gt; <code>110.88 / 2 = 55.44</code>.
+That's still twice the efficiency of <a href="https://wiki.factorio.com/Inserters#Chest_to_chest">chest-to-chest</a> transport.
+And there's the fun fact that items are transported across <em>distances</em> faster as well, since a train is longer than a regular chest!</p>
+<p><img alt="yolo" src="factorio-train-belt-turn.png" /></p>
+<p>It's possible to make turns without loosing out on throughput as well. Above are two examples of right-hand turns.</p>
+<p><img alt="yolo" src="factorio-train-belt-crossing.png" /></p>
+<p>If half throughput is OK then a simple crossing is possible. For full throughput, put then in a 2x2 grid.</p>
+<hr />
+<h5>INFINITE lanes for different items!</h5>
+<p>By setting filters on the stacks in the cargo wagons, it's possible to use the "belt" for transport of many things.
+The total throughput will be limited, but it's cool, so why not.</p>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="debugsymbols.html">Notes on debug symbols</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="factorio-designs-1.html">Factorio designs, pt 1</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: factorio
+    <ul>
+    
+    
+        <li>
+            Prev: <a href="factorio-designs-1.html">Factorio designs, pt 1</a>
+        </li>
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

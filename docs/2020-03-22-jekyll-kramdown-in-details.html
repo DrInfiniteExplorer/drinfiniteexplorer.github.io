@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Markdown in &lt;details&gt; - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Today I've polished the blog a bit and found out some stuff.</p>
+<p>I learned about the HTML5 <a href="https://www.w3schools.com/tags/tag_details.asp">&lt;details&gt; tag</a> when I searched for a simple way to make collapsible code
+ (which is great for illustrative purposes, but can get in the way of the main point you want to convey).</p>
+<p>But I ran into some problems; The markdown inside the <code>&lt;details&gt;</code> tag didn't render.</p>
+<p>Some people suggested to add</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">markdown</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kramdown</span><span class="w"></span>
+<span class="nt">kramdown</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="nt">parse_block_html</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"></span>
+</code></pre></div>
+
+<p>to the <code>_config.yml</code> file <strong>but this was <em>bad</em></strong>!</p>
+<p>This is to apply a <a href="https://devblogs.microsoft.com/oldnewthing/20081211-00/?p=19873">global solution to a local problem</a>, which is never the solution you want to try first.</p>
+<p>I did try it, and it still made a big mess of things!</p>
+<p>A little extra digging and I found out that you can do</p>
+<div class="codehilite"><pre><span></span><code>{::nomarkdown}
+<span class="nt">&lt;details&gt;</span>
+<span class="nt">&lt;summary&gt;</span>This is an example<span class="nt">&lt;/summary&gt;</span>
+{:/nomarkdown}
+
+```python
+print(&quot;example yo&quot;)
+```
+
+{::nomarkdown}
+<span class="nt">&lt;/details&gt;</span>
+<span class="nt">&lt;br&gt;</span>
+{:/nomarkdown}
+</code></pre></div>
+
+<p>which just disables the markdown processor enough to let me add the raw html needed.</p>
+<p>And hey, here is that exact demo!</p>
+<details>
+<summary>This is an example</summary>
+
+
+<div class="codehilite"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;example yo&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+
+
+</details>
+<p><br></p>
+<p>Pretty neat.</p>
+<p><b>Update 2022-03-27</b>
+I've gotten sick n tired of Jekyll and rolled my own shit inspired by <a href="https://blog.thea.codes/a-small-static-site-generator/">thea.codes</a> and heaps of problems are not problems anylonger.
+The example above is now without the ugly <code>nomarkdown</code>-wrapping and <em>just works</em> &trade; but is no longer the <em>exact same demo</em> behind the scenes.</p>
+<p>Anyway it's here for posterity or something ¯\_(ツ)_/¯ </p>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="2020-05-11-windows-containers.html">Windows Container notes</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-03-21-hdl-synthesis-notes.html">HDL synthezis notes</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: blog
+    <ul>
+    
+        <li>
+            Next: <a href="2020-05-11-windows-containers.html">Windows Container notes</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-03-21-hdl-synthesis-notes.html">HDL synthezis notes</a>
+        </li>
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

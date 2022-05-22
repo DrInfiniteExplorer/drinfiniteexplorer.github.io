@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>HDL synthezis notes - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Many years ago, I thought that circuit diagrams was the only way to reason about electronics and logic.</p>
+<p>In fact I only lived in the analog world at the time, with transistors and resistors.</p>
+<p>Then I started studying at <a href="https://www.lith.liu.se/?l=en">LiTH</a> and learned more about analog electronics, and really got introduced to digital electronics.
+That shit was rad! Just connect pins of standard circuits to create advanced shit like counters and serial buffers and things that is straight up overwhelming to design as analog circuits!</p>
+<p>Then the courses slowly transitioned into how to compose more even advanced functionality, and finally into composing those functions into simple CPU architectures!</p>
+<p>At this point we still drew schematics for things and used this as the perspective to reason around.
+Then we got introduced to <a href="https://en.wikipedia.org/wiki/VHDL">VHDL</a> and things started taking off for real!
+Within a few weeks we had to design and implement functioning CPU architectures on <a href="https://en.wikipedia.org/wiki/Complex_programmable_logic_device">CPLD</a>s.</p>
+<p>It wasn't a game-changer at the time.
+But now it seems like the simplest thing to project the idea of what you want into <a href="https://en.wikipedia.org/wiki/VHDL">VHDL</a>.
+Schematics and diagrams are still of help of course, but any single subcircuit is easy to express.</p>
+<h2>For the uninitiated</h2>
+<p><a href="https://en.wikipedia.org/wiki/VHDL">VHDL</a> is one of two major <a href="https://en.wikipedia.org/wiki/Hardware_description_language">HDL</a> (Hardware Description Language) available, the other being <a href="https://en.wikipedia.org/wiki/Verilog">Verilog</a>.
+Verilog is similar in syntax to C, while <a href="https://en.wikipedia.org/wiki/VHDL">VHDL</a> is similar in syntax to <a href="https://en.wikipedia.org/wiki/Ada_(programming_language)">Ada</a>.
+I personally prefer the explicit and verbose syntax of <a href="https://en.wikipedia.org/wiki/VHDL">VHDL</a>.
+Verilog to me looks like someone made an ugly hack and everybody just rolled with it.</p>
+<p>Anyway, what the languages boil down to is to be able to say that</p>
+<ul>
+<li>We are designing a chip! (Called <em>Magic</em>)</li>
+<li>It has inputs <code>i1</code>, <code>i2</code></li>
+<li>It has outputs <code>o1</code></li>
+<li>Internall in our chips, we have two other chips A and B.</li>
+<li>A is a two-input AND-gate. Inputs <code>Ai1</code>, <code>Ai2</code>. Output <code>Ao1</code>.</li>
+<li>B is a NOT-gate. Input <code>Bi1</code>. Output <code>Bi2</code>.</li>
+<li>Connect <code>i1</code> to <code>Ai1</code></li>
+<li>Connect <code>i2</code> to <code>Ai2</code></li>
+<li>Connect <code>Ao1</code> to <code>Bi1</code></li>
+<li>Connect <code>Bo1</code> to <code>o1</code>.</li>
+</ul>
+<p>That's what it is in simple terms.</p>
+<details>
+
+<summary>
+Click here to view the corresponding VHDL
+</summary>
+
+
+<div class="codehilite"><pre><span></span><code><span class="c1">-- this is the entity</span><span class="w"></span>
+<span class="k">entity</span><span class="w"> </span><span class="nc">Magic</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
+<span class="w">  </span><span class="k">port</span><span class="w"> </span><span class="p">(</span><span class="w"> </span>
+<span class="w">    </span><span class="n">i1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">i2</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">o1</span><span class="w">  </span><span class="o">:</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">);</span><span class="w"></span>
+<span class="k">end</span><span class="w"> </span><span class="k">entity</span><span class="w"> </span><span class="nc">Magic</span><span class="p">;</span><span class="w"></span>
+
+<span class="c1">-- this is the architecture</span><span class="w"></span>
+<span class="k">architecture</span><span class="w"> </span><span class="nc">RTL</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nc">Magic</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
+<span class="w">  </span><span class="k">component</span><span class="w"> </span><span class="nc">AND</span><span class="w"></span>
+<span class="w">    </span><span class="k">port</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">Ai1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">;</span><span class="w"> </span>
+<span class="w">           </span><span class="n">Ai2</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">;</span><span class="w"> </span>
+<span class="w">           </span><span class="n">Ao1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">std_logic</span><span class="w"> </span><span class="p">);</span><span class="w"> </span>
+<span class="w">  </span><span class="k">end</span><span class="w"> </span><span class="k">component</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">component</span><span class="w"> </span><span class="nc">NOT</span><span class="w"></span>
+<span class="w">    </span><span class="k">port</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="n">Bi1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">;</span><span class="w"> </span>
+<span class="w">           </span><span class="n">Bo1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">std_logic</span><span class="w"> </span><span class="p">);</span><span class="w"> </span>
+<span class="w">  </span><span class="k">end</span><span class="w"> </span><span class="k">component</span><span class="p">;</span><span class="w"></span>
+<span class="k">begin</span><span class="w"></span>
+<span class="w">  </span><span class="c1">-- Here we say that we have a signal called `wire1`.</span><span class="w"></span>
+<span class="w">  </span><span class="k">signal</span><span class="w"> </span><span class="n">wire1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">-- Create an AND-gate called A, and connect input from Magic to it.</span><span class="w"></span>
+<span class="w">  </span><span class="c1">-- Output is into the signal `wire`</span><span class="w"></span>
+<span class="w">  </span><span class="n">A</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="k">port</span><span class="w"> </span><span class="k">map</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">Ai1</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">i1</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">Ai2</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">i2</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">Ao1</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">wire1</span><span class="w"></span>
+<span class="w">  </span><span class="p">);</span><span class="w"> </span>
+<span class="w">  </span><span class="c1">-- Create NOT-circuit called B.</span><span class="w"></span>
+<span class="w">  </span><span class="c1">-- Input is the signal `wire` which is connected to the output of A</span><span class="w"></span>
+<span class="w">  </span><span class="c1">-- Output is connected to the output of Magic</span><span class="w"></span>
+<span class="w">  </span><span class="n">B</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">port</span><span class="w"> </span><span class="k">map</span><span class="w"> </span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">Bi1</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">wire</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">Bo1</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">o1</span><span class="w"></span>
+<span class="w">  </span><span class="p">);</span><span class="w"> </span>
+<span class="k">end</span><span class="w"> </span><span class="k">architecture</span><span class="w"> </span><span class="nc">RTL</span><span class="p">;</span><span class="w"></span>
+</code></pre></div>
+
+
+
+</details>
+<p><br></p>
+<p>Now, as basic logic like AND, OR, NOT, etc is very common building blocks, we there is language support for being able to express that without expicitly declaring all internal" chips and connections they require. A functional equivalent would be </p>
+<ul>
+<li>We are designing a chip!</li>
+<li>It has inputs <code>i1</code>, <code>i2</code></li>
+<li>It has outputs <code>o1</code></li>
+<li>Connect <code>NOT(AND(i1, i2))</code> to <code>o1</code></li>
+</ul>
+<p>This is a lot easier and a lot more concise to express than the earlier version, and thus easier to work with.</p>
+<details>
+
+<summary>
+Click here to view the corresponding VHDL
+</summary>
+
+
+<div class="codehilite"><pre><span></span><code><span class="c1">-- this is the entity</span><span class="w"></span>
+<span class="k">entity</span><span class="w"> </span><span class="nc">Magic</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
+<span class="w">  </span><span class="k">port</span><span class="w"> </span><span class="p">(</span><span class="w"> </span>
+<span class="w">    </span><span class="n">i1</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">i2</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">o1</span><span class="w">  </span><span class="o">:</span><span class="w"> </span><span class="k">out</span><span class="w"> </span><span class="kt">std_logic</span><span class="p">);</span><span class="w"></span>
+<span class="k">end</span><span class="w"> </span><span class="k">entity</span><span class="w"> </span><span class="nc">Magic</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">architecture</span><span class="w"> </span><span class="nc">RTL</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="nc">Magic</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
+<span class="k">begin</span><span class="w"></span>
+<span class="w">  </span><span class="c1">-- This is a lot more compact and concise. You could even do `o1 &lt;= i1 nand i2;` directly!</span><span class="w"></span>
+<span class="w">  </span><span class="n">o1</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="p">(</span><span class="n">i1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">i2</span><span class="p">);</span><span class="w"></span>
+<span class="k">end</span><span class="w"> </span><span class="k">architecture</span><span class="w"> </span><span class="nc">RTL</span><span class="p">;</span><span class="w"></span>
+</code></pre></div>
+
+
+
+</details>
+<p><br></p>
+<p>These are both two versions of what is called a <em><a href="https://en.wikipedia.org/wiki/Netlist">netlist</a></em>.</p>
+<p>A netlist is a.. list, that describes the interconnectivity network of circuits.</p>
+<p>The process of synthesizing <a href="https://en.wikipedia.org/wiki/VHDL">VHDL</a>(or any <a href="https://en.wikipedia.org/wiki/Hardware_description_language">HDL</a>) is the process of refining the netlists into less concise versions of themselves.
+After the netlist has been detailed all the way to only consist of individual AND, OR, NOT cells, it is said to be a <em>logic-level netlist</em>.
+Of course, depending on the target of the synthetization there might be higher-level gates available for common functions, like adders or memories.</p>
+<p>We perform further synthetization from <em>logic-level</em> to <em>gate-level</em>, and during this we might map some logic to the existing adder-circuits available.</p>
+<p>Regardless of the level where it is done, the term is <em>technology mapping</em> when mapping a netlist to existing building blocks.
+Technically mapping basic logic like AND is also <em>technology mapping</em>.</p>
+<p>Logic networks can be transformed into multiple equivalent circuits.
+Sometimes an <abbr title="And-inverter graph">AIG</abbr> is a good representation, where optimizations can be performed.
+But it could as well be that the logic is turned into a <abbr title="Look-up table">LUT</abbr>, which can be realized with MUXes or ROM.</p>
+<p>For <a href="https://en.wikipedia.org/wiki/Field-programmable_gate_array">FPGA</a>s, technology mapping is often to rewrite logic circuits into fixed-sized LUTs.</p>
+<p>For <a href="https://en.wikipedia.org/wiki/Complex_programmable_logic_device">CPLD</a>s, it could be to turn logic into ORs of ANDs (<a href="https://en.wikipedia.org/wiki/Disjunctive_normal_form">sum of products</a>).</p>
+<p>After a gate-level netlist has been produced, it is <em><a href="https://en.wikipedia.org/wiki/Place_and_route">placed and routed</a></em>.
+This corresponds to giving physical locations to the cells(placing) and making sure the right inputs/outputs can be connected (routing).
+This is kind of like solving a sudoku-puzzle; position the numbers(place) and make sure the constraints are fullfilled (routing is possible).
+Like in sudoku, something that is badly placed prevents you from solving the entire puzzle. If that happens, you try again until you make it.</p>
+<p>Now there are a few common ways to synthezise to hardware</p>
+<ul>
+<li>Map to <a href="https://en.wikipedia.org/wiki/Field-programmable_gate_array">FPGA</a> / <a href="https://en.wikipedia.org/wiki/Complex_programmable_logic_device">CPLD</a>. There are known grids where a unit can perform simple logic, usually with a D-style flipflop at the end, and a connectivity grid that can be configured to connect units to each other. The hardware is reconfigurable multiple times and easily aquired at a low cost.</li>
+<li>Map to a <em>Standard Cell</em> architecture. Like and <a href="https://en.wikipedia.org/wiki/Field-programmable_gate_array">FPGA</a> there are units with simple logic available, but there is larger flexibility in interconnect and special functions. This is done if you want a physical chip built with your logic that you can sell / build bigger systems with. This is a rather expensive process, and once the chip has been manufactured it is impossible to change or update. But it is absolutely cheap in large numbers, and doesn't require bootstrapping.</li>
+<li>Map all the way to individual analog/digital electronic blocks. This is pretty hardcore, but offers some potential that is lost when you constrain yourself to be able to fit into a pre-designed grid. For example, for some circuits you might be able to drastically decrease the chip-area needed to implement a function.</li>
+</ul>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="2020-03-22-jekyll-kramdown-in-details.html">Markdown in &lt;details&gt;</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-03-20-rant-about-github-pages.html">Github pages</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: blog
+    <ul>
+    
+        <li>
+            Next: <a href="2020-03-22-jekyll-kramdown-in-details.html">Markdown in &lt;details&gt;</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-03-20-rant-about-github-pages.html">Github pages</a>
+        </li>
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

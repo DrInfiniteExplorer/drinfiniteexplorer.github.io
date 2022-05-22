@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Notes on debug symbols - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Debug symbols wooh yeah!</p>
+<ul>
+<li>Enables introspection of binary executables</li>
+<li>Type information!</li>
+<li>Global symbols &amp; address resolution</li>
+<li>Global methods</li>
+<li>Secrets the goverment doesn't want us to know 👽</li>
+</ul>
+<h3>Formats?</h3>
+<ul>
+<li><abbr title="Program Database">PDB</abbr> - Produced by MS compilers, proprietary format</li>
+<li><abbr title="Debugging With Arbitrary Record Formats (smh my head)">DWARF</abbr> - Everybody else?</li>
+</ul>
+<h3>Core Ideas</h3>
+<div class="codehilite"><pre><span></span><code><span class="k">struct</span><span class="w"> </span><span class="nc">Struct</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Struct</span><span class="o">*</span><span class="w"> </span><span class="n">StructPtr</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">yeet</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">yolo</span><span class="p">[</span><span class="mi">3</span><span class="p">][</span><span class="mi">2</span><span class="p">];</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+</code></pre></div>
+
+<p>is (aproximately) represented in debug symbol format as (pseudocode)</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Struct</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">members</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">&quot;StructPtr&quot;</span><span class="p">,</span> <span class="n">StructPtrType</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">&quot;yeet&quot;</span><span class="p">,</span> <span class="n">ArrayType1</span><span class="p">)</span>
+        <span class="p">(</span><span class="s2">&quot;yolo&quot;</span><span class="p">,</span> <span class="n">ArrayType2</span><span class="p">)</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="n">StructPtrType</span> <span class="o">=</span> <span class="n">POINTER</span><span class="p">(</span><span class="n">Struct</span><span class="p">)</span>
+
+<span class="n">ArrayType1</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+<span class="n">ArrayType2</span> <span class="o">=</span> <span class="n">Array</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">ArrayType1</span><span class="p">)</span>
+</code></pre></div>
+
+<h4>Libraries</h4>
+<ul>
+<li>dbghelper lel</li>
+<li><abbr title="Debug Interface Access, a COM api for reading(writin?) PDB files">DIA</abbr> sdk</li>
+<li><a href="https://github.com/moyix/pdbparse">pdbparse</a> on github and <strong>pip</strong> by Moyix. Pretty old? Requires full parse before usable? No documentation? 😭</li>
+<li><a href="https://github.com/dotnet/roslyn">roslyn</a> is c# implementation of <em>windows</em> and <em>portable</em></li>
+<li><a href="https://github.com/microsoft/cci"><abbr title="Common Compiler Infrastrucutre">CCI</abbr></a> is old c# implementation</li>
+<li><a href="https://github.com/shareef12/libpdb">libpdb</a> is a linux(platform limited? 🤔)-lib to parse <abbr title="Program Database">PDB</abbr> files</li>
+<li><a href="https://github.com/wbenny/pdbex">pdbex</a> recreates struct/unions from <abbr title="Program Database">PDB</abbr>-files using <em><abbr title="Debug Interface Access, a COM api for reading(writin?) PDB files">DIA</abbr></em></li>
+<li><a href="https://github.com/willglynn/pdb">willglynn/pdb</a> is a rust-library to lazily explore <abbr title="Program Database">PDB</abbr> files<br />
+    Is rust always hard to follow, or is the implementation spooky?</li>
+<li><a href="https://github.com/microsoft/microsoft-pdb">microsoft-pdb</a> from MS is actual implementation of stuff.<br />
+    Seriously who wrote this, I get it,-92 and stuff, but when is <code>mpspnpn</code> or <code>mpsnsi</code> ever a good variable name???? 🙂🔫</li>
+</ul>
+<h3>References/Sources</h3>
+<ul>
+<li><a href="https://llvm.org/docs/PDB/index.html">GREAT WRITEUP</a> at LLVM by <a href="https://github.com/zjturner?tab=repositories">zjturner</a> (see <a href="https://github.com/microsoft/microsoft-pdb/issues/51#issuecomment-954217478">this</a>)</li>
+<li>
+<p><a href="https://llvm.org/devmtg/2016-11/Slides/Kleckner-CodeViewInLLVM.pdf">A presentation</a>, also from LLVM.</p>
+</li>
+<li>
+<p><a href="https://twitter.com/aionescu/status/1057739095495954432">A twitter thread</a> which asks for non-<abbr title="Debug Interface Access, a COM api for reading(writin?) PDB files">DIA</abbr> <abbr title="Program Database">PDB</abbr> parsers</p>
+<ul>
+<li>Moyix recommended <abbr title="Common Compiler Infrastrucutre">CCI</abbr></li>
+<li>Others recommend <abbr title="Debug Interface Access, a COM api for reading(writin?) PDB files">DIA</abbr></li>
+<li>Some bloke recommends Roslyn</li>
+</ul>
+</li>
+<li><a href="https://github.com/microsoft/cci"><abbr title="Common Compiler Infrastrucutre">CCI</abbr></a> from Microsoft - Old code for reading/writing <abbr title="Program Database">PDB</abbr> files in c#<ul>
+<li>These two 👇 are linked replacements from the <abbr title="Common Compiler Infrastrucutre">CCI</abbr> repository</li>
+<li><a href="https://github.com/jbevain/cecil/tree/master/symbols">Cecil</a></li>
+<li><a href="https://github.com/dotnet/roslyn">Roslyn</a></li>
+</ul>
+</li>
+<li><a href="https://llvm.org/docs/CommandGuide/llvm-pdbutil.html">llvm-pdbutil</a> which does work with <abbr title="Program Database">PDB</abbr> files</li>
+<li><a href="https://github.com/radareorg/radare2/tree/master/libr/bin/pdb">Radare2</a> - OSS hacking/reversing/whatever tool with <abbr title="Program Database">PDB</abbr> capabilities</li>
+<li><a href="https://pierrelib.pagesperso-orange.fr/exec_formats/MS_Symbol_Type_v1.0.pdf">MS_Symbol_Type_v1.0.pdf</a></li>
+</ul>
+<hr />
+<h4>c# packages?</h4>
+<p>Those are a bit messy but after trying to sort things out it boils down to <em>"Windows <abbr title="Program Database">PDB</abbr> in Roslyn"</em> and <em>"Portable <abbr title="Program Database">PDB</abbr> in symreader-portable"</em></p>
+<ul>
+<li><a href="https://www.nuget.org/packages/Microsoft.DiaSymReader">Microsoft.DiaSymReader</a><ul>
+<li><em>Project Website</em> &amp; <em>Source Repo</em> -&gt; <a href="https://github.com/dotnet/symreader">symreader</a></li>
+<li><a href="https://github.com/dotnet/symreader">symreader</a><ul>
+<li>Managed COM <strong>definition</strong> for DiaSymReader</li>
+<li>Windows <abbr title="Program Database">PDB</abbr> implementation-&gt; <a href="https://www.nuget.org/packages/Microsoft.DiaSymReader.Native">Microsoft.DiaSymReader.Native</a></li>
+<li>Portable <abbr title="Program Database">PDB</abbr> implementation-&gt; <a href="https://www.nuget.org/packages/Microsoft.DiaSymReader.PortablePdb">Microsoft.DiaSymReader.PortablePdb</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="https://www.nuget.org/packages/Microsoft.DiaSymReader.Native">Microsoft.DiaSymReader.Native</a><ul>
+<li><em>Project Website</em> -&gt; <a href="https://github.com/dotnet/roslyn">roslyn</a></li>
+</ul>
+</li>
+<li><a href="https://www.nuget.org/packages/Microsoft.DiaSymReader.PortablePdb">Microsoft.DiaSymReader.PortablePdb</a><ul>
+<li><em>Project Website</em> &amp; <em>Source Repo</em> -&gt; <a href="https://github.com/dotnet/symreader-portable">symreader-portable</a></li>
+<li><a href="https://github.com/dotnet/symreader-portable">symreader-portable</a><ul>
+<li>COM interface definition -&gt; <a href="https://www.nuget.org/packages/Microsoft.DiaSymReader">Microsoft.DiaSymReader</a></li>
+<li><strong>Implements</strong> DiaSymReader interface for <strong>Portable <abbr title="Program Database">PDB</abbr></strong></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4>Portable <abbr title="Program Database">PDB</abbr></h4>
+<ul>
+<li><a href="https://github.com/dotnet/core/blob/main/Documentation/diagnostics/portable_pdb.md">Portable <abbr title="Program Database">PDB</abbr> format</a> intro.</li>
+</ul>
+<p>Can't find any source that explicitly says "This is CLI only and not for any native images" ¯\_(ツ)_/¯</p>
+<h3>MS <abbr title="Program Database">PDB</abbr> implementation notes</h3>
+<ul>
+<li>
+<p>Most of the code deals with <code>PB</code> (pointer bytes) for everything. What is typing? Who knows.</p>
+</li>
+<li>
+<p><code>PB</code> often points at a <code>REC</code> which consists of a</p>
+<p><code>(whole_record_byte_count : u16, leaf_type : 16)</code> -tuple that is directly followed by type-specific data.</p>
+</li>
+<li>
+<p>The method for <a href="https://github.com/microsoft/microsoft-pdb/blob/e6b1dec61e154b568357537792e1d17a13525d5d/PDB/include/symtypeutils.h#L24">extracting the name</a> from a type record calls <code>cbNumField</code> which calls <code>CbGetNumericData</code> which is lacking an implementation.</p>
+<ul>
+<li>BUT <a href="https://github.com/search?q=CbGetNumericData&amp;type=code">searching github</a> for methods of that name gives a few interesting repos,
+ like <a href="https://github.com/Hengle/windows_nt_4_source_code/blob/d372619346dd27ad63524d5477f33fdaf2b8e0a4/windows_nt_4_source_code/nt4/private/sdktools/vctools/pdb/mre/mretype.cpp#L39">this</a>
+ and <a href="https://github.com/fungosforks/Windows-NT-4.0-Source/blob/7a9a4aa4c3f950d0cd5512af11224084205e8fc0/private/sdktools/vctools/pdb/mre/mretype.cpp#L39">this</a>.
+ Claims to be NT 4 source code?</li>
+</ul>
+</li>
+<li>
+<p>TI from name at <code>BOOL TPI1::QueryTiForUDT(const char *sz, BOOL fCase, OUT TI* pti)</code>     </p>
+</li>
+<li>
+<p>hash string:</p>
+<p><code>c++
+LHASH hashSz(SZ_CONST sz) const
+{
+    size_t  cch = strlen(sz);
+    return LHashPbCb((PB)sz, cch, hdr.tpihash.cHashBuckets);
+}</code>
+More hashing in misc.h</p>
+</li>
+<li>
+<p>LLVM hashing
+    LLVM hashes in <code>\llvm-project\llvm\lib\DebugInfo\PDB\Native\Hash.cpp</code>
+    LLVM TPI hash in <code>llvm-project\llvm\lib\DebugInfo\PDB\Native\TpiStream.cpp</code> and writing in <code>TpiStreamBuilder.cpp</code>.</p>
+<p>Seems that UDTs (non-forward?) are hashed on name (unique or not dep on scope-flag?) using V1 hash
+FWD entries are hashed on the whole bytes for the record tho??? But then that's not used
+Seems they are also hashed on name and that's used.</p>
+<p>In file there's a hash for every TI, and bitfields with {valid, valid} kinda, so for every TI
+there is {hash, valid, valid}.
+Make a bucket idx from the hash by % (#buckets).
+Make a list yourself at HashLists[BucketId] and append the TI to it.
+Then to find a thing by name, make the hash, walk the list, match the LeafID, hash(?), name.</p>
+</li>
+<li>
+<p>Index&amp;Offset:</p>
+<p>A plain "skip list" of {TI, offset}.
+Given a TI, "guess" where it should be in the list (like ((TI-min_ti)/TI_Count) * ListLen) and walk up/down
+ until {TI, offset} is found that is as close below target TI as possible, then iterate records from that
+ offset forward until found.</p>
+</li>
+<li>
+<p><abbr title="Common Compiler Infrastrucutre">CCI</abbr> <a href="https://github.com/microsoft/cci/blob/master/PDBReaderAndWriter/PdbReader/CvInfo.cs">field types</a></p>
+</li>
+</ul>
+<h3>MS <abbr title="Program Database">PDB</abbr> implementation Glossary</h3>
+<ul>
+<li>
+<p><em>Leaf</em> - A thing that identifies a type record.</p>
+<p>Though the type record doesn't need to be a leaf in a graph/tree of the type composition.</p>
+</li>
+</ul>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="factorio-links.html">Factorio-related links</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="factorio-train-belts.html">Trains as belts?</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: notes
+    <ul>
+    
+        <li>
+            Next: <a href="factorio-links.html">Factorio-related links</a>
+        </li>
+    
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

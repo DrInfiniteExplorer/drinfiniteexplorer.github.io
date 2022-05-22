@@ -134,14 +134,14 @@ def process(post, config):
 
 def write_output(post):
 
-    out_path = pathlib.Path(f"out/{post['dest_path']}")
+    out_path = pathlib.Path(f"docs/{post['dest_path']}")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(post['rendered'], encoding='utf8')
 
     return post
 
 def copy_statics(posts):
-    out_root = pathlib.Path("out")
+    out_root = pathlib.Path("docs")
     for post in posts:
         static_root = post['orig_file_path'].parent / "static"
         print(f"Globbing in {static_root.as_posix()}")
@@ -163,7 +163,7 @@ def main():
     print("\n" * 3)
 
     import shutil
-    shutil.rmtree('out', ignore_errors=True)
+    shutil.rmtree('docs', ignore_errors=True)
 
     config = load_config()
 

@@ -1,0 +1,488 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>WSL2 & USB Serials - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Yo yo! USB &amp; USB-serials in WSL? Read more!</p>
+<div id="toc" style="float:none">
+* Table of Content
+{:toc}
+</div>
+
+<h1>Introductory rambling</h1>
+<p>WSL1 is supercool, as it makes ELF-binaries executable <em>straight up</em> by the windows OS.</p>
+<p>WSL2 which uses slim virtual machines is not quite as <em>cool</em>, but it is way more <em>convenient</em> to get compabitility with practically everything.
+But, passthrough of USB peripherals to the WSL2 kernel has been missing for a while.</p>
+<p>Fret not! The handsome looking fellas over at Microsoft has collaborated with <em>Frans van Dorsselaer</em>, famous for his <a href="https://github.com/dorssel/usbipd-win">usbipd-win</a>-project, which brings <em>USB over IP</em> -hosting capabilities to windows! By setting up the hosting of USB devices on the windows end, you can connect and mount them into your WSL-space, making everybody happy as can be!</p>
+<h1>WSL Kernel version needs to be lifted!</h1>
+<p>The kernel needs to be <em>usbip</em>-aware in order to be aware of usbip. Previously it didn't know it should be, so we need to help it out with that.</p>
+<p>Read on about how to pull updates from MS if you are interested, but you <strong>most likely</strong> want to build the kernel yourself to get drivers anyway.</p>
+<h2>Do I need to win11 or windows update??</h2>
+<p>Fake news out there suggest that you need to upgrade to Win11 in order to make it work.
+It even suggests that you need to use windows update in order to get it working.</p>
+<p>Don't panic! You can run <code>wsl --update</code> to update your kernel to a new fancy version!
+You should probably do this while the WSL host is not running. If you can't figure out how to close them gracefully, bring out the killswitch with <code>wsl --shutdown</code>. Docker doesn't seem to always like this, but that's not my problem ¯\_(ツ)_/¯</p>
+<p>However this <em>might</em> require you to enable the <em>Receive updates for other Microsoft products when you update Windows</em> in Windows Update.</p>
+<p>This cool fellow on Github wrote how to <a href="https://github.com/microsoft/WSL/issues/5650#issuecomment-765825503">Manually get the latest WSL2-kernel</a>. <strong>Thanks Mr. cool guy!</strong></p>
+<p>Run <code>uname -r</code> in WSL to get the current version of the kernel.</p>
+<h2>Just build the kernel yourself, it's not scary</h2>
+<p><em>But hey!</em> You are probably one of those noobs who want to be able to actually <em>use</em> the imported USB-devices!
+In that case you might need to <a href="https://askubuntu.com/questions/1373910/ch340-serial-device-doesnt-appear-in-dev-wsl/">build the kernel</a> yourself in the end, with <strong>drivers</strong> either built directly into the kernel, or as <strong>runtime-loadable modules</strong>.
+It's pretty straightforward to do in WSL2 with the instructions in the linked post.</p>
+<h1>USBIPD-WIN</h1>
+<p>OK, so now you have a new fancy updated kernel with USB-drivers. Fuck yeah, you are pretty cool!
+Time to get this <code>usbipd-win</code>-ball rolling! Head over to the <a href="https://github.com/dorssel/usbipd-win/releases">usbipd-win releases</a>-page to download and install that shit!</p>
+<h2>Troubles in paradise</h2>
+<p>Before you go any further - Try running <code>reg query "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{36fc9e60-c465-11cf-8056-444553540000}" /v UpperFilters</code>.</p>
+<p>If you get any output from that registry key, you are <a href="https://github.com/dorssel/usbipd-win/issues/118">in for a bad time</a>.</p>
+<p>It means something is trying to intercept and listen to the USB communication. For me it was <em>USBPcap</em> which I installed with the <em>Wireshark</em>-package.
+But I've actually never used <em>USBPcap</em> so to solve problems I just uninstalled it. <strong>Yeet!</strong></p>
+<p>A new version of usbipd-win is comming out that adds a <code>--force</code>-flag to the <code>usbipd bind</code> command which forces that to resolve itself, but at the cost of making the USB device <em>exclusive</em> to either (general purpose) Windows or usbipd. The normal <code>usbipd bind</code>-command leaves it up to whoever attaches to the device first.</p>
+<h3>Share thy wealth</h3>
+<p>Alright! Now we're ready to go! Run <code>usbipd bind --all</code> to expose everything!! Fuck security, fuck everything! (Actually be responsible though)</p>
+<p>Hop over to WSL and run <code>usbip list -r &lt;your ip&gt;</code> to get a listing of what devices are exposed. If you can't find <code>usbip</code>, follow the instructions at <a href="https://github.com/dorssel/usbipd-win/wiki/WSL-support#building-your-own-usbip-enabled-wsl-2-kernel">usbipd-win kernel building</a> to get <code>usbip</code>-commands that are guaranteed compatible with your machine and distro. You might also want to do the <code>sudo visudo</code>-part to update the secure path.</p>
+<h1>Let WSL2 join the fun (or: <code>usbip</code> in <code>wsl</code>)</h1>
+<p>Now we're ready! You've done the <code>usbip list</code>-command in WSL and can see that there is stuff available from windows! Take note of the <strong>busid</strong> of the device you want to import, because you need to pass it to <code>sudo usbip attach -r &lt;your ip&gt; --busid &lt;busid&gt;</code>.</p>
+<p>After you've done that, run <code>lsusb</code> to verify that it's there. Next, run <code>ls -al /dev</code> to find that your device is now available!</p>
+<h2>You can't access that!</h2>
+<p>But wait, fuck! You probably also notice that the device in <code>/dev</code> is owned by <code>root</code> and nobody else has access to it! Crap!</p>
+<p>That's because the <code>udev</code>-service isn't running. Manually kickstart it with <code>sudo service udev restart</code> and reattach your device.</p>
+<h3>Missing udev rules??</h3>
+<p>Still fully owned by root?? Maybe you have the same problem I had! I had a Ubuntu18.04-distro which seemed to be missing the <code>udev</code> rule files. I did a distro-upgrade to 20.04 (because of other reasons) and they magically appeared. Thanks 20.04!</p>
+<p>With the <code>udev</code>-rules in place and the <code>udev</code>-serive running, my device was properly exposed under <code>/dev/serial/by-*/*</code>. Heck yeah! We're pretty awesome by this stage!</p>
+<h2>Automate WSL <code>udev service</code> starting</h2>
+<p>It's a hassle to have to do the <code>sudo service restart udev</code> every time WSL is started though.</p>
+<p>I adapted the solution from the <a href="https://github.com/microsoft/WSL/issues/4166#issuecomment-618159162">automatic filecache clearing</a>(which you probably also want to do to reclaim memory! Spent ~90 minutes reading through that and related threads, it boils down to linux using all available ram <em>which it doesn't use <em>itself</em></em> for file caching, but it doesn't play well when there are others sharing that RAM. Oh well!)</p>
+<p>Point 2&amp;3 from that link was thus adapted to kickstart <code>udev</code> when a WSL-bash is started.</p>
+<ul>
+<li><code>[ -z "$(ps -ef | grep systemd-udevd | grep -v grep)" ] &amp;&amp; sudo service udev restart &amp;&gt; /dev/null</code> in <code>~/.bashrs</code> to restart(more stable than starting it 🤔) if <code>udev</code> isn't already running in WSL2</li>
+<li><code>%sudo ALL=NOPASSWD: /usr/sbin/service udev restart</code> added in <code>sudo visudo</code> to allow <code>.bashrc</code> (or well anyone) to actually do it.).</li>
+</ul>
+<p>You can verify with <code>dmesg</code> that stuff is recognized and attached by <code>udev</code> as you attach/dettach the device with <code>usbip</code>. </p>
+<h1>The promised land</h1>
+<p>Finally! The perfect workflow!</p>
+<p>Hah! Not quite yet! There's more to this saga!</p>
+<h2>Automating WSL-side attaching</h2>
+<p>Guess what's very very irritating? When you're doing some programming of a device and it restarts. That is often to be expected and part of the flashing workflow, but now you just lost the USB connection.</p>
+<p>Guess you'll just have to manually open a shell an reattach the device again...
+Or! OR! You can spend a few hours writing some crap that does it for you, automatically!!</p>
+<p>That's what I did, and I'm very proud of my sucky solution, so much so that I'm going to share it with you, at no cost, free of charge. Yep, I'm a generous god. Use it at your own risk.</p>
+<p>Credit where credit is due: This is a mutilated version of <a href="https://docs.microsoft.com/en-us/windows/win32/devio/registering-for-device-notification">Registering for device notification</a>, and the mutilation is probably not very healthy.</p>
+<p>It uses a specific format of <code>device-&gt;dbcc_name</code> to extract VID&amp;PID-information, which on serial-port-detection (which happens in a pass immediately after) is sent to <code>attach.py</code> using <code>system()</code> 🤦‍♂️</p>
+<p>Why pass it to python? It boils down to</p>
+<ul>
+<li>String handling in c(++) sucks ass</li>
+<li>It's easier to detect ip, wsl-location, and pass process arguments in python.</li>
+</ul>
+<p>Am I proud of it? Not at all! But this is a work-in-progress until auto-wsl-attach is available in <code>usbipd-win</code>. And it works <em>adequately</em>! My devices are instantly(well at least very speedily, &lt;1sec) exposed to within WSL, and there's no stupid polling loop.</p>
+<p>I started a <a href="https://github.com/dorssel/usbipd-win/discussions/168">auto-attach discussion</a> about doing it the proper way in <code>usbipd-win</code> and it seems it's already in the backlog.</p>
+<p>Build with <code>gcc main.cpp -o main.exe -lole32</code>, or however you want to, I'm not your daddy, you can take care of yourself, I'm proud of you son.</p>
+<p>The code is available on github, in the <a href="https://github.com/DrInfiniteExplorer/shitty_usbipd-win_wsl_autoattacher">shitty_usbipd-win_wsl_autoattacher</a> repo.</p>
+<h3>C++</h3>
+<details><summary>CLICK TO EXPAND C++ code for automation</summary>
+
+<div class="codehilite"><pre><span></span><code><span class="c1">// RegisterDeviceNotification.cpp</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;windows.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tchar.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;strsafe.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;dbt.h&gt;</span><span class="cp"></span>
+
+<span class="c1">// This GUID is for all USB serial host PnP drivers, but you can replace it </span>
+<span class="c1">// with any valid device class guid.</span>
+<span class="n">GUID</span><span class="w"> </span><span class="n">WceusbshGUID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="mh">0x25dbce51</span><span class="p">,</span><span class="w"> </span><span class="mh">0x6c8f</span><span class="p">,</span><span class="w"> </span><span class="mh">0x4a72</span><span class="p">,</span><span class="w"></span>
+<span class="w">                      </span><span class="mh">0x8a</span><span class="p">,</span><span class="mh">0x6d</span><span class="p">,</span><span class="mh">0xb5</span><span class="p">,</span><span class="mh">0x4c</span><span class="p">,</span><span class="mh">0x2b</span><span class="p">,</span><span class="mh">0x4f</span><span class="p">,</span><span class="mh">0xc8</span><span class="p">,</span><span class="mh">0x35</span><span class="w"> </span><span class="p">};</span><span class="w"></span>
+
+<span class="c1">// For informational messages and window titles.</span>
+<span class="n">PWSTR</span><span class="w"> </span><span class="n">g_pszAppName</span><span class="p">;</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">OutputMessage</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">HWND</span><span class="w"> </span><span class="n">hOutWnd</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">WPARAM</span><span class="w"> </span><span class="n">wParam</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">LPARAM</span><span class="w"> </span><span class="n">lParam</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+<span class="c1">//     lParam  - String message to send to the window.</span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Message: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">lParam</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">ErrorHandler</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">LPCTSTR</span><span class="w"> </span><span class="n">lpszFunction</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">LPVOID</span><span class="w"> </span><span class="n">lpMsgBuf</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">LPVOID</span><span class="w"> </span><span class="n">lpDisplayBuf</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">DWORD</span><span class="w"> </span><span class="n">dw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GetLastError</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">FormatMessage</span><span class="p">(</span><span class="n">FORMAT_MESSAGE_ALLOCATE_BUFFER</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">FORMAT_MESSAGE_FROM_SYSTEM</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">FORMAT_MESSAGE_IGNORE_INSERTS</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nb">NULL</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">dw</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">MAKELANGID</span><span class="p">(</span><span class="n">LANG_NEUTRAL</span><span class="p">,</span><span class="w"> </span><span class="n">SUBLANG_DEFAULT</span><span class="p">),</span><span class="w"></span>
+<span class="w">        </span><span class="p">(</span><span class="n">LPTSTR</span><span class="p">)</span><span class="o">&amp;</span><span class="n">lpMsgBuf</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Error: %d - %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dw</span><span class="p">,</span><span class="w"> </span><span class="n">lpMsgBuf</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">LocalFree</span><span class="p">(</span><span class="n">lpMsgBuf</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="n">BOOL</span><span class="w"> </span><span class="nf">DoRegisterDeviceInterfaceToHwnd</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">IN</span><span class="w"> </span><span class="n">GUID</span><span class="w"> </span><span class="n">InterfaceClassGuid</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">IN</span><span class="w"> </span><span class="n">HWND</span><span class="w"> </span><span class="n">hWnd</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">OUT</span><span class="w"> </span><span class="n">HDEVNOTIFY</span><span class="o">*</span><span class="w"> </span><span class="n">hDeviceNotify</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">DEV_BROADCAST_DEVICEINTERFACE</span><span class="w"> </span><span class="n">NotificationFilter</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">ZeroMemory</span><span class="p">(</span><span class="o">&amp;</span><span class="n">NotificationFilter</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">NotificationFilter</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="n">NotificationFilter</span><span class="p">.</span><span class="n">dbcc_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">DEV_BROADCAST_DEVICEINTERFACE</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">NotificationFilter</span><span class="p">.</span><span class="n">dbcc_devicetype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DBT_DEVTYP_DEVICEINTERFACE</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">NotificationFilter</span><span class="p">.</span><span class="n">dbcc_classguid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">InterfaceClassGuid</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="o">*</span><span class="n">hDeviceNotify</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">RegisterDeviceNotification</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="n">hWnd</span><span class="p">,</span><span class="w">                       </span><span class="c1">// events recipient</span>
+<span class="w">        </span><span class="o">&amp;</span><span class="n">NotificationFilter</span><span class="p">,</span><span class="w">        </span><span class="c1">// type of device</span>
+<span class="w">        </span><span class="n">DEVICE_NOTIFY_WINDOW_HANDLE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">DEVICE_NOTIFY_ALL_INTERFACE_CLASSES</span><span class="w"></span>
+<span class="w">    </span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nb">NULL</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">*</span><span class="n">hDeviceNotify</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">ErrorHandler</span><span class="p">(</span><span class="s">&quot;RegisterDeviceNotification&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">FALSE</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">TRUE</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">MessagePump</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">HWND</span><span class="w"> </span><span class="n">hWnd</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">MSG</span><span class="w"> </span><span class="n">msg</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">retVal</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">((</span><span class="n">retVal</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GetMessage</span><span class="p">(</span><span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">))</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">retVal</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">-1</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">ErrorHandler</span><span class="p">(</span><span class="s">&quot;GetMessage&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="k">else</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">TranslateMessage</span><span class="p">(</span><span class="o">&amp;</span><span class="n">msg</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">DispatchMessage</span><span class="p">(</span><span class="o">&amp;</span><span class="n">msg</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kt">void</span><span class="w"> </span><span class="nf">startThing</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">VID</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">PID</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">cmd</span><span class="p">[</span><span class="mi">5123</span><span class="p">];</span><span class="w"></span>
+<span class="w">    </span><span class="n">snprintf</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">cmd</span><span class="p">),</span><span class="w"> </span><span class="s">&quot;py attach.py %4x:%4x&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">VID</span><span class="p">,</span><span class="w"> </span><span class="n">PID</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Starting &#39;%s&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">cmd</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">system</span><span class="p">(</span><span class="n">cmd</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="n">INT_PTR</span><span class="w"> </span><span class="n">WINAPI</span><span class="w"> </span><span class="n">WinProcCallback</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">HWND</span><span class="w"> </span><span class="n">hWnd</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">UINT</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">WPARAM</span><span class="w"> </span><span class="n">wParam</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">LPARAM</span><span class="w"> </span><span class="n">lParam</span><span class="w"></span>
+<span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">LRESULT</span><span class="w"> </span><span class="n">lRet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">HDEVNOTIFY</span><span class="w"> </span><span class="n">hDeviceNotify</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">HWND</span><span class="w"> </span><span class="n">hEditWnd</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">static</span><span class="w"> </span><span class="n">ULONGLONG</span><span class="w"> </span><span class="n">msgCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">message</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nl">WM_CREATE</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">DoRegisterDeviceInterfaceToHwnd</span><span class="p">(</span><span class="w"></span>
+<span class="w">            </span><span class="n">WceusbshGUID</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="n">hWnd</span><span class="p">,</span><span class="w"></span>
+<span class="w">            </span><span class="o">&amp;</span><span class="n">hDeviceNotify</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="c1">// Terminate on failure.</span>
+<span class="w">            </span><span class="n">ErrorHandler</span><span class="p">(</span><span class="s">&quot;DoRegisterDeviceInterfaceToHwnd&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">ExitProcess</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">        </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nl">WM_DEVICECHANGE</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="c1">//</span>
+<span class="w">        </span><span class="c1">// This is the actual message from the interface via Windows messaging.</span>
+<span class="w">        </span><span class="c1">// This code includes some additional decoding for this particular device type</span>
+<span class="w">        </span><span class="c1">// and some common validation checks.</span>
+<span class="w">        </span><span class="c1">//</span>
+<span class="w">        </span><span class="c1">// Note that not all devices utilize these optional parameters in the same</span>
+<span class="w">        </span><span class="c1">// way. Refer to the extended information for your particular device type </span>
+<span class="w">        </span><span class="c1">// specified by your GUID.</span>
+<span class="w">        </span><span class="c1">//</span>
+<span class="w">        </span><span class="n">PDEV_BROADCAST_DEVICEINTERFACE</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">PDEV_BROADCAST_DEVICEINTERFACE</span><span class="p">)</span><span class="n">lParam</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="n">TCHAR</span><span class="w"> </span><span class="n">strBuff</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span><span class="w"></span>
+
+<span class="w">        </span><span class="c1">// Output some messages to the window.</span>
+<span class="w">        </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">wParam</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="nl">DBT_DEVICEARRIVAL</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="n">msgCount</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">StringCchPrintf</span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="n">strBuff</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="n">TEXT</span><span class="p">(</span><span class="s">&quot;Message %d: DBT_DEVICEARRIVAL</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">),</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">msgCount</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">types</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="s">&quot;OEM&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;???&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;VOLUME&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;PORT&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;???&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;DEVICEINTERFACE&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;HANDLE&quot;</span><span class="p">};</span><span class="w"></span>
+
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">*</span><span class="w"> </span><span class="n">dev</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">DEV_BROADCAST_HDR</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">lParam</span><span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Type: %d - %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">dbch_devicetype</span><span class="p">,</span><span class="w"> </span><span class="n">types</span><span class="p">[</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">dbch_devicetype</span><span class="p">]);</span><span class="w"></span>
+
+<span class="w">                </span><span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">VID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="k">static</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">PID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span><span class="w"></span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">dbch_devicetype</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">DBT_DEVTYP_DEVICEINTERFACE</span><span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">*</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="n">DEV_BROADCAST_DEVICEINTERFACE</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">dev</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="kt">wchar_t</span><span class="w"> </span><span class="n">guidStringBuffer</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span><span class="w"></span>
+<span class="w">                    </span><span class="n">StringFromGUID2</span><span class="p">(</span><span class="n">device</span><span class="o">-&gt;</span><span class="n">dbcc_classguid</span><span class="p">,</span><span class="w"> </span><span class="n">guidStringBuffer</span><span class="p">,</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">guidStringBuffer</span><span class="p">)</span><span class="o">/</span><span class="k">sizeof</span><span class="p">(</span><span class="n">guidStringBuffer</span><span class="p">[</span><span class="mi">0</span><span class="p">]));</span><span class="w"></span>
+<span class="w">                    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Device guid: %S</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">guidStringBuffer</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Device name: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">device</span><span class="o">-&gt;</span><span class="n">dbcc_name</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">                    </span><span class="c1">// \\?\USB#VID_1A86&amp;PID_7523#5&amp;521a615&amp;0&amp;9                    </span>
+<span class="w">                    </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">longEnough</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strlen</span><span class="p">(</span><span class="n">device</span><span class="o">-&gt;</span><span class="n">dbcc_name</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">25</span><span class="p">;</span><span class="w"></span>
+<span class="w">                    </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">startsOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">device</span><span class="o">-&gt;</span><span class="n">dbcc_name</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">strstr</span><span class="p">(</span><span class="n">device</span><span class="o">-&gt;</span><span class="n">dbcc_name</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;</span><span class="se">\\\\</span><span class="s">?</span><span class="se">\\</span><span class="s">USB#VID_&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="k">auto</span><span class="w"> </span><span class="n">ampPIDOffset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">device</span><span class="o">-&gt;</span><span class="n">dbcc_name</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">16</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">longEnough</span><span class="p">;</span><span class="w"></span>
+<span class="w">                    </span><span class="k">const</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">continuesOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ampPIDOffset</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">strstr</span><span class="p">(</span><span class="n">ampPIDOffset</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;&amp;PID_&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="k">if</span><span class="p">(</span><span class="n">startsOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">continuesOk</span><span class="p">)</span><span class="w"></span>
+<span class="w">                    </span><span class="p">{</span><span class="w"></span>
+<span class="w">                        </span><span class="kt">char</span><span class="w"> </span><span class="n">vid</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="n">pid</span><span class="p">[</span><span class="mi">5</span><span class="p">];</span><span class="w"></span>
+
+<span class="w">                        </span><span class="n">memcpy</span><span class="p">(</span><span class="n">vid</span><span class="p">,</span><span class="w"> </span><span class="n">device</span><span class="o">-&gt;</span><span class="n">dbcc_name</span><span class="o">+</span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span><span class="w"></span>
+<span class="w">                        </span><span class="n">memcpy</span><span class="p">(</span><span class="n">pid</span><span class="p">,</span><span class="w"> </span><span class="n">device</span><span class="o">-&gt;</span><span class="n">dbcc_name</span><span class="o">+</span><span class="mi">21</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">);</span><span class="w"></span>
+<span class="w">                        </span><span class="n">vid</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pid</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">                        </span><span class="n">VID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">strtol</span><span class="p">(</span><span class="n">vid</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">);</span><span class="w"></span>
+<span class="w">                        </span><span class="n">PID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">strtol</span><span class="p">(</span><span class="n">pid</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="mi">16</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">                        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;GOT YOU NOW %04x:%04x</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">VID</span><span class="p">,</span><span class="w"> </span><span class="n">PID</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">dbch_devicetype</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">DBT_DEVTYP_PORT</span><span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                    </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">*</span><span class="w"> </span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="k">const</span><span class="w"> </span><span class="n">DEV_BROADCAST_PORT</span><span class="o">*&gt;</span><span class="p">(</span><span class="n">dev</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Port name: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">port</span><span class="o">-&gt;</span><span class="n">dbcp_name</span><span class="p">);</span><span class="w"></span>
+<span class="w">                    </span><span class="k">if</span><span class="p">(</span><span class="n">VID</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">-1</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">PID</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">-1</span><span class="p">)</span><span class="w"></span>
+<span class="w">                    </span><span class="p">{</span><span class="w"></span>
+<span class="w">                        </span><span class="n">startThing</span><span class="p">(</span><span class="n">VID</span><span class="p">,</span><span class="n">PID</span><span class="p">);</span><span class="w"></span>
+<span class="w">                        </span><span class="n">VID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span><span class="w"></span>
+<span class="w">                    </span><span class="p">}</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="nl">DBT_DEVICEREMOVECOMPLETE</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="n">msgCount</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">StringCchPrintf</span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="n">strBuff</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="n">TEXT</span><span class="p">(</span><span class="s">&quot;Message %d: DBT_DEVICEREMOVECOMPLETE</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">),</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">msgCount</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="nl">DBT_DEVNODES_CHANGED</span><span class="p">:</span><span class="w"></span>
+<span class="w">            </span><span class="n">msgCount</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">StringCchPrintf</span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="n">strBuff</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="n">TEXT</span><span class="p">(</span><span class="s">&quot;Message %d: DBT_DEVNODES_CHANGED</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">),</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">msgCount</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="k">default</span><span class="o">:</span><span class="w"></span>
+<span class="w">            </span><span class="n">msgCount</span><span class="o">++</span><span class="p">;</span><span class="w"></span>
+<span class="w">            </span><span class="n">StringCchPrintf</span><span class="p">(</span><span class="w"></span>
+<span class="w">                </span><span class="n">strBuff</span><span class="p">,</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span><span class="w"></span>
+<span class="w">                </span><span class="n">TEXT</span><span class="p">(</span><span class="s">&quot;Message %d: WM_DEVICECHANGE message received, value %d unhandled.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">),</span><span class="w"></span>
+<span class="w">                </span><span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">msgCount</span><span class="p">,</span><span class="w"> </span><span class="n">wParam</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">OutputMessage</span><span class="p">(</span><span class="n">hEditWnd</span><span class="p">,</span><span class="w"> </span><span class="n">wParam</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">LPARAM</span><span class="p">)</span><span class="n">strBuff</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nl">WM_CLOSE</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">UnregisterDeviceNotification</span><span class="p">(</span><span class="n">hDeviceNotify</span><span class="p">))</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">ErrorHandler</span><span class="p">(</span><span class="s">&quot;UnregisterDeviceNotification&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">        </span><span class="n">DestroyWindow</span><span class="p">(</span><span class="n">hWnd</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="nl">WM_DESTROY</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="n">PostQuitMessage</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">default</span><span class="o">:</span><span class="w"></span>
+<span class="w">        </span><span class="c1">// Send all other messages on to the default windows handler.</span>
+<span class="w">        </span><span class="n">lRet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DefWindowProc</span><span class="p">(</span><span class="n">hWnd</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="n">wParam</span><span class="p">,</span><span class="w"> </span><span class="n">lParam</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">lRet</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="cp">#define WND_CLASS_NAME TEXT(&quot;Usbipd-win-wsl-autoattach&quot;)</span>
+
+<span class="n">BOOL</span><span class="w"> </span><span class="n">InitWindowClass</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">WNDCLASSEX</span><span class="w"> </span><span class="n">wndClass</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">cbSize</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">WNDCLASSEX</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CS_OWNDC</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CS_HREDRAW</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">CS_VREDRAW</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">hInstance</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">HINSTANCE</span><span class="o">&gt;</span><span class="p">(</span><span class="n">GetModuleHandle</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">lpfnWndProc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">reinterpret_cast</span><span class="o">&lt;</span><span class="n">WNDPROC</span><span class="o">&gt;</span><span class="p">(</span><span class="n">WinProcCallback</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">cbClsExtra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">cbWndExtra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">hIcon</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LoadIcon</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">IDI_APPLICATION</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">hbrBackground</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="c1">//CreateSolidBrush(RGB(192, 192, 192));</span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">hCursor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LoadCursor</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">IDC_ARROW</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">lpszClassName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">WND_CLASS_NAME</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">lpszMenuName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">wndClass</span><span class="p">.</span><span class="n">hIconSm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">wndClass</span><span class="p">.</span><span class="n">hIcon</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">RegisterClassEx</span><span class="p">(</span><span class="o">&amp;</span><span class="n">wndClass</span><span class="p">))</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">ErrorHandler</span><span class="p">(</span><span class="s">&quot;RegisterClassEx&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">FALSE</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">TRUE</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+<span class="kt">int</span><span class="w"> </span><span class="kr">__stdcall</span><span class="w"> </span><span class="n">_tWinMain</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="n">_In_</span><span class="w"> </span><span class="n">HINSTANCE</span><span class="w"> </span><span class="n">hInstanceExe</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">_In_opt_</span><span class="w"> </span><span class="n">HINSTANCE</span><span class="p">,</span><span class="w"> </span><span class="c1">// should not reference this parameter</span>
+<span class="w">    </span><span class="n">_In_</span><span class="w"> </span><span class="n">PTSTR</span><span class="w"> </span><span class="n">lpstrCmdLine</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">_In_</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">nCmdShow</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">InitWindowClass</span><span class="p">())</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">HWND</span><span class="w"> </span><span class="n">hWnd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CreateWindowEx</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="n">WS_EX_CLIENTEDGE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">WS_EX_APPWINDOW</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">WND_CLASS_NAME</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="s">&quot;Yolo boi&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">WS_OVERLAPPEDWINDOW</span><span class="p">,</span><span class="w"> </span><span class="c1">// style</span>
+<span class="w">        </span><span class="n">CW_USEDEFAULT</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nb">NULL</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="n">hInstanceExe</span><span class="p">,</span><span class="w"></span>
+<span class="w">        </span><span class="nb">NULL</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hWnd</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">ErrorHandler</span><span class="p">(</span><span class="s">&quot;CreateWindowEx: main appwindow hWnd&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">    </span><span class="c1">//ShowWindow(hWnd, SW_SHOWNORMAL);</span>
+<span class="w">    </span><span class="n">UpdateWindow</span><span class="p">(</span><span class="n">hWnd</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">MessagePump</span><span class="p">(</span><span class="n">hWnd</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div>
+
+
+</details>
+
+<h3>Python3</h3>
+<details><summary>CLICK TO EXPAND Python3 code.</summary>
+
+
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+
+  <span class="nb">id</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">ip</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostbyname_ex</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">())[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+  <span class="n">usbip</span> <span class="o">=</span> <span class="s2">&quot;/usr/lib/linux-tools/5.4.0-77-generic/usbip&quot;</span>
+
+  <span class="n">get_busid_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">usbip</span><span class="si">}</span><span class="s2"> list -r </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2"> | grep </span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2"> | cut -f 1 -d : | awk &#39;</span><span class="se">{{</span><span class="s2">$1=$1;print</span><span class="se">}}</span><span class="s2">&#39;&quot;</span>
+  <span class="n">attach_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">usbip</span><span class="si">}</span><span class="s2"> attach -r </span><span class="si">{</span><span class="n">ip</span><span class="si">}</span><span class="s2"> --busid $(</span><span class="si">{</span><span class="n">get_busid_cmd</span><span class="si">}</span><span class="s2">)&quot;</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">get_busid_cmd</span><span class="p">)</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">attach_cmd</span><span class="p">)</span>
+
+
+  <span class="n">is32bit</span> <span class="o">=</span> <span class="p">(</span><span class="n">platform</span><span class="o">.</span><span class="n">architecture</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;32bit&#39;</span><span class="p">)</span>
+  <span class="n">system32</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;SystemRoot&#39;</span><span class="p">],</span> <span class="s1">&#39;SysNative&#39;</span> <span class="k">if</span> <span class="n">is32bit</span> <span class="k">else</span> <span class="s1">&#39;System32&#39;</span><span class="p">)</span>
+  <span class="n">wsl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">system32</span><span class="p">,</span> <span class="s1">&#39;wsl.exe&#39;</span><span class="p">)</span>
+
+  <span class="n">wsl_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">wsl</span><span class="si">}</span><span class="s1"> -e /bin/bash -c&#39;</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">wsl_cmd</span><span class="p">)</span>
+
+  <span class="n">split_cmd</span> <span class="o">=</span> <span class="n">wsl_cmd</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;sudo </span><span class="si">{</span><span class="n">attach_cmd</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+  <span class="nb">print</span><span class="p">(</span><span class="n">split_cmd</span><span class="p">)</span>
+
+  <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">split_cmd</span><span class="p">)</span>
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+  <span class="n">main</span><span class="p">()</span>
+</code></pre></div>
+
+
+
+</details>
+
+<p>What am I going to do with this? Program some AVRs and nanos and STM32s and ESPs, and of course I'm going to run a <a href="https://github.com/mkuf/prind">prind stack</a> inside WSL2 now that I can! Hah, can't trick me into buying expensive raspberries now that there are no more <em>Zero W2</em> on the market 😭</p>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="factorio-designs-1.html">Factorio designs, pt 1</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-11-21-bed-level-script.html">Bed level script</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: blog
+    <ul>
+    
+    
+        <li>
+            Prev: <a href="2020-11-21-bed-level-script.html">Bed level script</a>
+        </li>
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>
