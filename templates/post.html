@@ -1,0 +1,41 @@
+
+{% extends "base.html" %}
+
+{% block title %}{{post.title}}{% endblock %}
+{% block content %}
+{{ post.content }}
+
+<hr>
+{% if post.next_post or post.prev_post %}
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    {% if post.next_post %}
+            <li>
+            Next: <a href="{{post.next_post.url}}">{{post.next_post.title}}</a>
+        </li>
+    {% endif %}
+    {% if post.prev_post %}
+        <li>
+            Prev: <a href="{{post.prev_post.url}}">{{post.prev_post.title}}</a>
+        </li>
+    {% endif %}
+    </ul>
+{% endif %}
+
+{% if post.category %}
+Category: {{post.category}}
+    <ul>
+    {% if post.cat_next_post %}
+        <li>
+            Next: <a href="{{post.cat_next_post.url}}">{{post.cat_next_post.title}}</a>
+        </li>
+    {% endif %}
+    {% if post.cat_prev_post %}
+        <li>
+            Prev: <a href="{{post.cat_prev_post.url}}">{{post.cat_prev_post.title}}</a>
+        </li>
+    {% endif %}
+    </ul>
+{% endif %}
+{% endblock %}
+

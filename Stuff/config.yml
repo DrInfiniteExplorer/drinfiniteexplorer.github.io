@@ -1,0 +1,17 @@
+site:
+  title: Siffer
+  email: blog@luben.se
+  description: >- # this means to ignore newlines until "baseurl:"
+    Blogging is for nerds!
+  baseurl: "" # the subpath of your site, e.g. /blog
+  url: "https://blog.luben.se" # the base hostname & protocol for your site, e.g. http://example.com
+
+  github_username:  drinfiniteexplorer
+  disqus:
+    shortname: siffer
+
+markdown:
+  extensions:
+    - abbr
+    - fenced_code
+    - codehilite
