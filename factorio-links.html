@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Factorio-related links - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Factorio fuck yea!</p>
+<ul>
+<li>
+<p><a href="https://github.com/piebro/factorio-blueprint-visualizer">Blueprint Visualizer</a></p>
+</li>
+<li>
+<p><a href="https://github.com/redcrafter/verilog2factorio">verilog2factorio</a>
+    This is kinda what I wanted to do long ago.
+    It <a href="https://github.com/Redcrafter/verilog2factorio/blob/5a7e842c00137a4127eb977f39d20d740818557b/src/main.ts#L70">generates a netlist</a>, then <a href="https://github.com/Redcrafter/verilog2factorio/blob/e755b6ad58b82bc3c13655de31fe3c64c7b24270/src/parser.ts#L49">maps</a> to classes that implement the same logic.
+    Essentially, technology mapping is done in JS after a netlist is produced.
+    Stuff is connected and then BP is generated. There's also routing with annealing or matrix placement.</p>
+<p>Why was it that I abandoned my own attempt?
+I wanted to go the full yosys-route with doing tech mapping in yosys, then either doing P&amp;R in python or building standard cells and layouts in factorio.
+Only to realize that VHDL/Verilog isn't a good match for factorio, as the circuit system in factorio is a lot richer than what VHDL/Verilog can do. ¯\_(ツ)_/¯</p>
+</li>
+<li>
+<p>Bot queues: The scheduling of tasks does at most X schedules per tick.
+    However, if a thing is lacking materials right now, it can't be scheduled.
+    If there are Y such failed attempts in a tick, queueing is abandoned for the tick.
+    Increase these limits in the console (<code>/c &lt;command&gt;</code>)</p>
+<p><code>game.player.force.max_successful_attempts_per_tick_per_construction_queue = 20
+game.player.force.max_failed_attempts_per_tick_per_construction_queue = 20</code></p>
+</li>
+</ul>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="random-notes.html">Random notes</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="debugsymbols.html">Notes on debug symbols</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: notes
+    <ul>
+    
+        <li>
+            Next: <a href="random-notes.html">Random notes</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="debugsymbols.html">Notes on debug symbols</a>
+        </li>
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

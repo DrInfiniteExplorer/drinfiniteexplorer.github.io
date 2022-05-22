@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Windows Container notes - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Today was the day during which I was going to get going with <a href="https://github.com/ghdl/ghdl-yosys-plugin">ghdl</a>.</p>
+<p>Or so I thought.</p>
+<p>Initially I was reading up on the updates, and was going to start by running a simple example in their docker.</p>
+<p>I haven't dealt much with docker so far; I know the concept(s) and that has been enough.</p>
+<p>So I thought I'd read up a little on what the normal workflows are, etc.
+But I got sidetracked by vaugely worded comments on the docker page about the difference between Linux and Windows docker images.</p>
+<p>I've heard <em>a lot</em> of people say that <em>Windows-based docker-images is impossible!</em> but what do I find, it's been supported for 4 years already.</p>
+<p>Linux images can be hosted with process-isolation in a Linux-VM, or be hosted more separated where each image gets its own small VM.</p>
+<p>But what about windows images?</p>
+<p>Apparently they are built on top of Microsoft-provided base-images which contain container-adapted DLLs(?).
+ By default images built on those just soft-link to the base image, but this can be overridden as mentioned in the <a href="https://docs.microsoft.com/en-us/virtualization/windowscontainers/about/faq">Windows Container FAQ</a> on MSDN.</p>
+<p>After an hour of fruitless digging on Docker and various Microsoft-sites I found this <a href="https://unit42.paloaltonetworks.com/what-i-learned-from-reverse-engineering-windows-containers/">reverse-engineering post</a> site where some bloke summarized
+ that virtualization works with <em>Jobs</em> and <em>Silos</em>. A Job loosely corresponds to the Linux mechanism <em>control group</em> (cgroup).
+The namespacing mechanism in Linux is loosely the same as a <em>silo</em> which can change the root namespace object in windows,
+ through which filesystem, registry, and other things is accessed.</p>
+<p>With these new search terms in hand I found book about <a href="https://books.google.se/books?id=y83LDgAAQBAJ&amp;lpg=PT299&amp;ots=kHeyLyLsgE&amp;dq=create%20silo%20application%20win32&amp;pg=PT310#v=onepage&amp;q=create%20silo%20application%20win32&amp;f=false">Windows Internals</a> with details about how to create and operate jobs and silos.</p>
+<p>It is likely that <a href="https://docs.microsoft.com/en-us//windows/msix/overview?view=winrt-18362">MSIX</a> (which I stumbled over when looking for container APIs) uses these mechanisms to achieve their containerized structure.
+MSIX replaces the old <a href="https://www.tmurgent.com/TmBlog/?p=2489">AppV</a> which did virtualization by filter drivers and similar redirection.</p>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="2020-11-07-ender5-pro-firmware.html">Building & flashing Ender5 Pro firmware</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-03-22-jekyll-kramdown-in-details.html">Markdown in &lt;details&gt;</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: blog
+    <ul>
+    
+        <li>
+            Next: <a href="2020-11-07-ender5-pro-firmware.html">Building & flashing Ender5 Pro firmware</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-03-22-jekyll-kramdown-in-details.html">Markdown in &lt;details&gt;</a>
+        </li>
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

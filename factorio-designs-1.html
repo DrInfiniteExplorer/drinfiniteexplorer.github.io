@@ -1,0 +1,366 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Factorio designs, pt 1 - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Time to write some stuff. :factorio-gun-turret:</p>
+<p>Me and some friends have weekly factorio sessions where we are building a big base.</p>
+<p>For some reason I've gotten really sidetracked into making complex circuit designs in factorio, so that's what I'm spending most of my time doing.</p>
+<p>We initially joked that I should write a Confluence page for the various circuits, but as of yesterday it is now real requests.</p>
+<p>So I'm going to make some posts about some of the components I've produced.</p>
+<h1>Table of Contents</h1>
+<div id="toc" style="float:none">
+* Table of Content
+{:toc}
+</div>
+
+<h1>Bus network overview</h1>
+<p>It is a common pattern to add green and red circuits to the power grid in rail network blueprints</p>
+<p><img alt="A large power pole, with green and red circuits connected" src="factorio-bus.png" /></p>
+<p>The green and red circuit networks have been allocated to</p>
+<ul>
+<li>
+<p>:factorio-green_network: The <em>data bus</em>.<br />
+    General purpose signals can travel here.<br />
+    Circuits on the network do not output signals here, unless told so by the control bus.</p>
+</li>
+<li>
+<p>:factorio-red_network: The <em>control bus</em>. Components connected to the bus must adhere the control bus specification.</p>
+</li>
+</ul>
+<h2>Different architectures/bus designs/philosophies</h2>
+<p>I have thus far categorized larger circuit designs in two groups. The data bus :factorio-green_network: is the same in both, but the usage of the control bus :factorio-red_network: differs.</p>
+<p>There is nothing that prevents one design from containing devices that internally use a bus design of the other type.</p>
+<p>It is however advisable to decide which design to use for the global, rail-connected network.</p>
+<h3>Sovereignly owned buses</h3>
+<p>These buses are owned by a single central controller. The central controller orchestrates all bus traffic, and any peripheral devices are slaves that can not initiate bus traffic.</p>
+<h3>Shared buses</h3>
+<p>Devices connected to these buses negotiate and cooperate for access to the bus. Only a single device can control the bus at any single time.
+Once control is obtained, it is retained until it is volountarily released. Multiple bus operations can be performed during this time.</p>
+<h4>Shared access negotiation</h4>
+<details><summary>This section contains the details for the negotiation protocol. Click to expand.</summary>
+
+A device outputs its [ID] on the :factorio-red_network:‍:factorio-info: signal for up to two ticks.
+
+It will read back the :factorio-red_network:‍:factorio-info: value from the bus,
+ and if it is the same as the [ID] there is no competition for the bus.  
+
+If there is another device trying for access at the same time, the value that is read from the
+ control bus :factorio-red_network: will be the sum of the individual [ID]s, and we thus know there is contention.
+
+Devices must keep their [ID] on the :factorio-red_network:‍:factorio-info: signal at least until
+ they have determined wether they are the master or not. If they become the master, the
+ :factorio-red_network:‍:factorio-info: signal must be maintained until ownership is released.
+
+The value of :factorio-red_network:‍:factorio-info: on the bus must be examined for the first tick
+ that :factorio-red_network:‍:factorio-info: was on the network in order to determine ownership.
+However, deciding on this may happen many ticks after the fact. The fastest design I have made
+ requires only two ticks to determine this.
+
+Once a device knows there was no contention, it will put out its [ID] on the :factorio-red_network:‍:factorio-signal_M: signal.
+This is purely done for debugging purposes. During the ownership, the :factorio-red_network:‍:factorio-info: signal may fluctuate as
+ other devices are trying for access. But there is only a single master, the [ID] of which will be stable on :factorio-red_network:‍:factorio-signal_M: signal.
+
+</details>
+
+<p>A blueprint that performs this negotiation is available in <a href="#bus-negotiator">Bus Negotiator</a>.</p>
+<h3>Control bus :factorio-red_network: signals {#control-bus-spec}</h3>
+<table>
+<thead>
+<tr>
+<th>Sovreign bus</th>
+<th>Shared bus</th>
+<th>Signal</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>:white_check_mark:</td>
+<td>:white_check_mark:</td>
+<td>:factorio-red_network:‍:factorio-signal_R:</td>
+<td>Address of register/device to put on the data bus:factorio-green_network:</td>
+</tr>
+<tr>
+<td>:white_check_mark:</td>
+<td>:white_check_mark:</td>
+<td>:factorio-red_network:‍:factorio-signal_W:</td>
+<td>Address of register/device write data bus :factorio-green_network: content into</td>
+</tr>
+<tr>
+<td>:white_check_mark:</td>
+<td>:white_check_mark:</td>
+<td>:factorio-red_network:‍:factorio-checked-green:</td>
+<td>Used to clock the addressed device, details depend on device</td>
+</tr>
+<tr>
+<td></td>
+<td>:white_check_mark:</td>
+<td>:factorio-red_network:‍:factorio-info:</td>
+<td>Used to query the control bus :factorio-red_network: for access. <br> Typically a device uses its [ID] for this.</td>
+</tr>
+<tr>
+<td></td>
+<td>:white_check_mark:</td>
+<td>:factorio-red_network:‍:factorio-signal_M:</td>
+<td>The [ID] of the current master of the bus</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h1>Addressable memory circuit</h1>
+<p><img alt="Addressable Memory" src="factorio-addressable-memory.png" /></p>
+<details>
+
+<summary>
+Blueprint
+</summary>
+
+
+
+<div class="codehilite"><pre><span></span><code><span class="mf">0</span><span class="n">eNrlWkuO4zYQvcqAq0wid0TqZxtJgAkyCLKYWUwWvRgMDFmi28ToY1BUJ0bDB5hb5Gw5SSjLttwybbJk</span><span class="o">+</span><span class="n">QNk02hJ5DPJV6x6VeQLmiYlXXCWCTR</span><span class="o">+</span><span class="n">QSzKswKNP7</span><span class="o">+</span><span class="n">ggj1lYVK9E8sFRWP0zLgo5RsLZWFavahbDD6glYVYFtO</span><span class="o">/</span><span class="mf">0</span><span class="n">RivvliIZoIJRmuY9cNykpXplHLZoOldTgsRCpZnEnGRF2z9r</span><span class="o">/</span><span class="n">w5CTNwHzwLLeU</span><span class="o">/</span><span class="mf">3</span><span class="n">oMn0eWgMhpVDYqqBa7</span><span class="o">+</span><span class="n">cBrv</span><span class="o">/</span><span class="n">wCTT75syXhUMrF</span><span class="o">+</span><span class="n">xCvr1WfiVqN74pRm7Z7Y1XddrfZebudDdvMJORPzlAoWDaI8nbIsFDk</span><span class="o">/</span><span class="n">nBrezsyV84oZr6dVjz3PBM</span><span class="o">+</span><span class="n">TyZTOw2cmO8seDepEfo7Zbg1mjBdiYkxSNKfR14qoglY4FZhc</span><span class="o">/</span><span class="n">YrzgaQkX1BeUzFG38u</span><span class="o">+</span><span class="n">eSkWJRx9dQZVX2RfUjVW8uMcNlex4ewGFtOIxZSfpqImgqxNbI8KV03FBrInHhoC7OohXYR8Pcox</span><span class="o">+</span><span class="n">qk7ARXSYilHWGZiMuN5OmGZxEHjWZgU9Cx6jmwc8roh0fA4MuPR3c1vu0wnibRrIh0jGmcsEZQDfdw0CbfrW1ac</span><span class="o">+</span><span class="n">b6</span><span class="o">/</span><span class="mf">7</span><span class="o">/</span><span class="n">M6Lyw5sgAe1K04MFvuy618UroU</span><span class="o">+</span><span class="mf">7</span><span class="n">VH</span><span class="o">+</span><span class="n">aGDQX</span><span class="o">/</span><span class="n">qyZt0p8CHUkBuQ8HjpSh4BFHQjpieJqCe</span><span class="o">/</span><span class="n">uxACHVP</span><span class="o">/</span><span class="n">zRpfcbYzAkFUAMY2NvYTl5bALmsBcS5uFhkX2MfMwOlix</span><span class="o">/</span><span class="n">CIvvQbDcOu5OBr0oGy2b5xdiowUF0BKc3GvZgdAWaveWZ0TnqItTsawq1LY8Ngbil036</span><span class="o">+</span><span class="n">gE4TvITItLYrI0d1mgPTaQRr3LehIMc2iGjnBkTvS5guevBMi9g47550uyq2neIZO</span><span class="o">+</span><span class="mf">0</span><span class="n">NPDQkFoOIJTcg9vG2xDYO5BIZ2YHjtSGKaaQJCiPT9A8fc</span><span class="o">/</span><span class="n">C4KYwUaZgkgyRMF4d24TZ6SWUH20Hs7KAXR95OuH9BoIiqcLrqJXAgS4AvuAQ7H9PXCtiGK</span><span class="o">+</span><span class="n">CCVVvtKOwr51A0jOZK0daDZquxYeur89q</span><span class="o">+</span><span class="n">oZP2Oqtm</span><span class="o">+</span><span class="mf">6</span><span class="n">qi</span><span class="o">+</span><span class="n">abVSbMsxtIyAMpyTsMd3VB</span><span class="o">+</span><span class="n">Z0KvmwXd24bSVCPa5X</span><span class="o">+</span><span class="n">dPMa6EoNhnRPDawzOhk9y1eOD2</span><span class="o">/</span><span class="n">GpUC</span><span class="o">/</span><span class="n">ENAAPQRp1t1Uco6XtRaMeROY</span><span class="o">+</span><span class="n">kkz6TPlSzFn21DHTNAz6lpaVkymmaRAbdWPRrAZ3x7WCs2k8q2CgCknHEwrTegCxweelNZlXFoT3J0gIqCROHDMXSXCH</span><span class="o">+</span><span class="n">oxzZwem97K5Dj2gpSPFMjom1ew9Ta0OB8bZvEb1kuCYGRHYga2j8tB9ntfuWU25MZndaa0FwGk8e7nd</span><span class="o">/</span><span class="n">BscAsJ5rxxLAML4TYkxBGH8rsQY9TAXbINAflWDOCCQP9QgLgjknRrEA4H8qQbxIVcDjGOo06H0em</span><span class="o">+</span><span class="n">XXP799s</span><span class="o">+</span><span class="mf">9</span><span class="n">SKKRxmsD3HSrJ6gmS4D6</span><span class="o">+</span><span class="n">qh5uLArdqAbdidiR3u4hieBpHuNyrtqCnxfp</span><span class="o">+</span><span class="n">wEdOWF</span><span class="o">+</span><span class="n">KbKg7QvUxDD0hTpXppy</span><span class="o">/</span><span class="n">yelDCPNRTT7SEO0Z0y06f4MjE4x6jTNv</span><span class="o">+</span><span class="n">AhRpjte</span><span class="o">/</span><span class="mf">6</span><span class="n">eTjLUpSS5ZkzQVMI1d6MtlIRTKgeK3sUxp0URThP6gaY5X75Jvz44b777mGeDv6SRUjHnefk0</span><span class="o">//</span><span class="n">Hj</span><span class="o">+</span><span class="mf">7</span><span class="n">eymwxZxXrGQeBgOxgG3tBdrf4DlJuZPw</span><span class="o">==</span><span class="w"></span>
+</code></pre></div>
+
+
+
+
+</details>
+<p><br></p>
+<h3>Overview</h3>
+<ul>
+<li>Memory cell</li>
+<li>Can contain all but 3 signal values at the same time.</li>
+<li>Non-writethrough</li>
+<li>Data clocked in on negative :factorio-red_network:‍:factorio-checked-green: flank.</li>
+</ul>
+<h3>Usage examples</h3>
+<ul>
+<li>Build a [requester station], and use the memory to tell the station what to request.</li>
+<li>Build an artillery station, and enable/disable it remotely.</li>
+<li>Build a giant refinery and control the processes and limits remotely.</li>
+<li>Control enabling/disabling of train stations remotely.</li>
+<li>Or go wild like me, and use it as a very large general purpose register for larger constructs.</li>
+</ul>
+<h3>Usage details</h3>
+<h4>Initial setup</h4>
+<ul>
+<li>The top constant combinator contains a :factorio-signal_black: signal which represents the address of the memory. You will want to assign a unique address to every memory instance.</li>
+</ul>
+<h4>Bus interaction</h4>
+<p>The circuit is controlled with :factorio-red_network:‍:factorio-signal_R:, :factorio-red_network:‍:factorio-signal_W:, :factorio-red_network:‍:factorio-checked-green:. See the <a href="#control-bus-spec">control bus :factorio-red_network:</a> for an overview.</p>
+<p>New data is sampled from the data bus :factorio-green_network: at the tick that the clock signal :factorio-red_network:‍:factorio-checked-green: has a negative flank.
+As factorio has discrete ticks, this means that the data sampled is from the last tick that the clock signal :factorio-red_network:‍:factorio-checked-green: was high.</p>
+<p>Any signals except :factorio-green_network:‍:factorio-list-dot:, :factorio-green_network:‍:factorio-info:, and :factorio-green_network:‍:factorio-checked-green: can be stored in the memory.</p>
+<h4>Signal lamps</h4>
+<ul>
+<li>Upper lamp: indicates the memory is addressed for writing.</li>
+<li>Lower lamp: indicates the memory is addressed for reading.</li>
+<li>Bottom-most lamp: indicates that the cell contains any non-zero content, and/or is addressed for reading.</li>
+</ul>
+<h4>Data ports</h4>
+<p>The left-most arithmetic combinator is <a href="#diode">diode/gate</a> from which the memory content is always available.
+ Hook up your own logic (like remote alerts or anything) here.</p>
+<h3>How to read the content of a cell</h3>
+<ul>
+<li>Put the address of the memory in :factorio-red_network:‍:factorio-signal_R:.</li>
+<li>The content of the memory will be available on the data bus :factorio-green_network:.</li>
+</ul>
+<h3>How to write data to a cell</h3>
+<ul>
+<li>Put the address of the memory on in :factorio-red_network:‍:factorio-signal_W:.</li>
+<li>Put whatever data you want to write on the data bus :factorio-green_network:</li>
+<li>Toggle (up,down) the :factorio-red_network:‍:factorio-checked-green: signal.</li>
+</ul>
+<h3>How to update/adjust the content of a memory register</h3>
+<ul>
+<li>Put the address of the memory on both the :factorio-red_network:‍:factorio-signal_R: and :factorio-red_network:‍:factorio-signal_W: signals.</li>
+<li>Add the adjustment to the data bus :factorio-green_network:<ul>
+<li>For example, hook up a constant combinator with "-5 wood" :factorio-green_network:‍:factorio-wood:</li>
+</ul>
+</li>
+<li>Toggle (up,down) the :factorio-red_network:‍:factorio-checked-green: signal.</li>
+</ul>
+<hr />
+<h1>Complete Bus negotiator {#bus-negotiator}</h1>
+<details><summary>Blueprint</summary>
+
+<div class="codehilite"><pre><span></span><code><span class="mf">0</span><span class="n">eNrtXW1u40YSvUpAYIHdrDRgf1IykACaeBAYiJ2J7YGRXQwEWaJtYmhSoKjJGgMdYG</span><span class="o">+</span><span class="n">xP</span><span class="o">/</span><span class="n">Zke5Il9WEpVDe7q1WklXH</span><span class="o">+</span><span class="n">zFimVJS7Xr2uel3d</span><span class="o">/</span><span class="n">OLdxvNwmkVJ7p188aJxmsy8k39</span><span class="o">+</span><span class="mf">8</span><span class="n">WbRfTKKy9</span><span class="o">/</span><span class="n">lT9PQO</span><span class="o">/</span><span class="n">GiPHz0Ol4yeixfTcJxNAmz7jh9vI2SUZ5m3qLjRckk</span><span class="o">/</span><span class="n">Jd3QhYdo4FRFuUPj2EejdU26OJjxwuTPMqjcPWNli</span><span class="o">+</span><span class="n">ehsn88TbMips8m5rNb2f5KI</span><span class="o">/</span><span class="n">SpDA</span><span class="o">/</span><span class="n">TWfR8sfixoWZLu14T8V</span><span class="o">/</span><span class="n">waL8ThUT9NlE</span><span class="o">+</span><span class="n">WfnoyTf</span><span class="o">/</span><span class="n">S77tuQbsbJW</span><span class="o">/</span><span class="n">FB800mUhePVddkpTeRZGg9vw4fR56j4fPGhuyjOw0wzoJ</span><span class="o">+</span><span class="n">jLJ8Xv9n</span><span class="o">+</span><span class="n">Hct3dC</span><span class="o">/</span><span class="n">LURin89IjxDCmOhvvdmz4O2MKsfGL0gYD2ThT2hAgGxdKG7LERzQblqN</span><span class="o">/</span><span class="n">N4pn4fJNSbLyyKy0S8p</span><span class="o">/</span><span class="n">snCyi56oeMWKd0bZeB7ly5dk8XGhQgczYHUfHzp0UDU6tmaHxeVJ9PzF76Jslg9hgJmFpY3hBsjLoUqnYbaKixPv78XH0nk</span><span class="o">+</span><span class="n">ncMML</span><span class="o">+</span><span class="n">yHtYjY4s1Uc1X8ftCpZtC5a0iKJkPyFCEkf0YIyQuEkFRTA0cIa0IQ</span><span class="o">/</span><span class="n">hhC3QNb2AW2cA1s0XJgnzYV2KegwOa1gc2qgd353WXSs3OKhAW</span><span class="o">+</span><span class="mf">38</span><span class="n">pUrME5COanCHH</span><span class="o">/</span><span class="mf">05</span><span class="n">HE</span><span class="o">/</span><span class="n">fhplKipsLfEiApQ91kYJlXQBBoUBNs7Po7iuBuPHqc1zl8FpMrdG8g9x59D</span><span class="o">+</span><span class="n">K29vxN3BSKno2yJyBPv</span><span class="o">+/</span><span class="n">LyfBYW94jTEll5NgeQVb</span><span class="o">/</span><span class="n">kOeXgSM3g9KwGh7YzONcND06FRVjlF3Q</span><span class="o">/</span><span class="n">n9CMJvE1w9m3Gk7SznAOGh3OXmX0Av1o6fiZ</span><span class="o">+</span><span class="n">DCCpq0Q9DUCQV8iEPSvCAQ9jZJPKOTa07mQwFxIWnHhAMGFvyC48ENj5S5HgKNAmOslyMZTGMfpbyiA7OsASa0omLdDweeNUnAxg2k5l</span><span class="o">+</span><span class="n">vGh1mND2tnfG5anaJIzYwudOMFVA94KwR3jkBwAwSCu0IguGsEgnuHQHCXCAS3whYGvxGdmkUEDJCsFUDeHAkgz44EkCUbocCA6WCwFTduo</span><span class="o">/</span><span class="n">tuGBfmsmjcnaZxuA</span><span class="o">+</span><span class="n">CYE3m9twpe</span><span class="o">/</span><span class="n">paUpsMBq5KK28Sm1cI2LxGwObgyMnSWSOt6nFa6uq5qqS2</span><span class="o">+</span><span class="n">MBSScPR</span><span class="o">+</span><span class="n">KEpoXRle</span><span class="o">+</span><span class="n">EsQVODbEFqpVWik8lIv24hdt8zZOUZZqlfr20e5pabHZ9Ahc6dtPJ</span><span class="o">///</span><span class="mf">6</span><span class="n">vg9</span><span class="o">/</span><span class="n">WU9z0abiMneFdlj4Oo6Swsc5LActafM9lury0b3A</span><span class="o">+</span><span class="n">qf5iZ8nMyuKeAculTOqDg5lqgpm</span><span class="o">+</span><span class="n">UDATWgnnvzjA4id9LCvHXyhWLev8RbUOAEov3Wf5jLW1rum</span><span class="o">/</span><span class="n">YKsBxvrGAGG2</span><span class="o">/</span><span class="n">RWhNNn9W</span><span class="o">/</span><span class="n">izjeAPt76qBrhvWO3rWxISdVzu</span><span class="o">+</span><span class="n">zMcXmE4vFV</span><span class="o">+</span><span class="n">jz5GSPkIgwqMyyttXIKKTdtIY6BU0YdN</span><span class="o">+</span><span class="mf">8</span><span class="n">eVKf7HISV4X5MprujxEK</span><span class="o">/</span><span class="n">U90RRy4YVyqHpG4Ul</span><span class="o">/</span><span class="n">FjZ27mLJ5esu5vZfevgxjNQlWbMq0X9dSYhZRw1FYUB7G56Zdx0J4UlNeAEiDToC5DGmQvULvdI43s3rLlRhlV1WV</span><span class="o">/</span><span class="n">h2bRX6ZFYXWSp3r0GWdwSORJKVfxlCs0ouUvVhebhZHQOLDMZhziRBZazRgAKYv4CGpFxyRU</span><span class="o">+</span><span class="mf">9</span><span class="n">uOHcPypwQA1SQDW3tnp5sqzUXT</span><span class="o">/</span><span class="n">kHeL</span><span class="o">/</span><span class="mf">2</span><span class="n">KV8r7yDFWa2SqBpZWkO8tTxRJxl29sqL05C4sYyNPh0sZ6kDrFcIwKci0MTsPJ5lKpnnVW93q</span><span class="o">+</span><span class="n">BAw6SGhwqhjOImrzTXx</span><span class="o">++</span><span class="n">HBWJhD73fvOkhc9Fsmri0BF9QK2GsEExEbEcjcFgUnWa2eQNulo44njZiTm207a1XdWkwvOINWKsN0346rt0Ca1nQsEbefnxtrMAgQbPQQ9pI</span><span class="o">/</span><span class="n">Q2g7UVBxW31VBoVt7Z3Y9VN0KCptqotqknXqK</span><span class="o">+</span><span class="n">e6wPipWQwfcMoDBcoMPI</span><span class="o">+</span><span class="n">vGc3iMmXOdq4DUcWko5Ktd7KxnIGhquK5fTlZnU5abcZhT</span><span class="o">/</span><span class="n">U</span><span class="o">+</span><span class="n">OXjR8j1L</span><span class="o">/</span><span class="n">DzAncwNkeABKxqRB</span><span class="o">/+</span><span class="n">nB7lbDJYY7KSypkSYdpc22s3R3velQIhqApE1mkC4pTGswSZfWApKDJTVgnFQN2iY17ST8mHXEOWJPi72iHEBKBGbZXMZ6Lk4kf0B92a19aZslYnjbFHqKrMA6g6xY6h8iZJq</span><span class="o">+</span><span class="n">lxZNWw0sTovRT</span><span class="o">/</span><span class="n">Poc6jV0egbJgPSC0ospVlU2FqTc1nB5OHjcijHaeknoTyhwAcKd77SCgHLU5vdCv4CONOZGiO</span><span class="o">/</span><span class="mf">9</span><span class="n">dRHMVBXBc3</span><span class="o">/</span><span class="n">irT8q4O1</span><span class="o">/</span><span class="n">Mo816</span><span class="o">+</span><span class="n">NCWkpp3Hm6By</span><span class="o">/</span><span class="mf">5</span><span class="n">e7cm6Zac29gZxhIWKVkK2ty7tJe4R9ZOvKdW2BgTVAKZVEzAXFeP2VIBlut4YZoFdQSBsJNMvmamPIfeKue6mZcS</span><span class="o">/</span><span class="n">mKO5aUbfvi2iXDfItRUQKpk0ElikoMgSQMbkgKhbVE4WBJjafAUaJoG1CDpqbaa1QFgktMBYJLLAWCWzZHcafi1W</span><span class="o">+</span><span class="mf">9</span><span class="n">eMWd7pFL0h64kLQsSaECRf19tRjoO2CgVQgYDpRxa5bFBQE3gEDY6xJwS3VTkAEkwlKXEFClQNnhI6BbhzabyGlb</span><span class="o">+</span><span class="mf">3</span><span class="n">QJZWX</span><span class="o">+</span><span class="mf">67</span><span class="n">SkjrHV4QeErQ4</span><span class="o">/</span><span class="n">Imx1eI</span><span class="o">+</span><span class="n">wpH6JsaR</span><span class="o">+</span><span class="n">gbFN4UfdNoXDd24QgbF1Q2Js3Qgwtm4AzwkQtudUugpwba</span><span class="o">/</span><span class="n">DX6lLSuIzQQQtuaFBFc5CRKMAPcFQg9q6jrl0u30Nq1To3W7EkLEZFBxprS0JoHYkDHWxrZQrXCTEVtfCKqoRRBFCSTvfIuJJ2usHAtQdadn3LRyVQnoUnE4JD3iPyVIT2eX0wcVpC2srVTV2LzE3SYjUB5OF2onSoT</span><span class="o">+</span><span class="n">qVXZ3Fxcb7VOARqswaIsS1M0iDIqgtO5mcbCkBpKjtth2hufebdeyVm1opxOm6yA1iRua4IS1NulgSY0nF22SvBJiQlavDHuIhbWE6WCpDpSGU4iEpcQpXCRO2vruQafd5kcGJWGQL2VgXcPALdXNlwYhVFquoEmoEMqVVpx2kLE</span><span class="o">/</span><span class="n">Wy3qdhRQl3JYBRXLRgnpuDmMa3flHPxgD9cH</span><span class="o">+</span><span class="n">rxH2Ml1eSQ7uc4xZOd3GLLzZQOnVklL1U66nJVzbATjJrG8SDcX9Hg9btkBJLlDec5eSeqCWZ5LDitb9tIRCZljJIcVdzVzm2U5JcFi3eaZGWLxug4NkNTg2vpMU</span><span class="o">/</span><span class="n">VupUOAwpvBG0d8asDWKgYnS</span><span class="o">+</span><span class="n">vHJUnQCcXSlpFddm2xV7KfFLmYtNYdYLqCMOkKpoU43Un0sgc</span><span class="o">/</span><span class="n">HZ8DznqT5qpVd6Cz7klssm</span><span class="o">/</span><span class="mf">18</span><span class="n">OEVjINFeYNZkbpN5vH6WcbbfUrla9bfecOqkKmcb</span><span class="o">/</span><span class="n">Nxmf6WD1A</span><span class="o">+</span><span class="mf">2</span><span class="n">Xlgc8eLR7dhATHv7Xx2Ed4XBksYfnP</span><span class="o">+</span><span class="mf">6</span><span class="n">Q355q8</span><span class="o">/</span><span class="n">FLiMwzzslD</span><span class="o">+</span><span class="n">Mxnk4</span><span class="o">+</span><span class="n">Vvxic9FrbS0HASM</span><span class="o">+</span><span class="n">D3BCCWLxf8BNhdqdw</span><span class="o">==</span><span class="w"></span>
+</code></pre></div>
+
+
+</details>
+
+<p>The bus negotiator is a basic control device that requests access to a <a href="#shared-buses">shared bus</a>.</p>
+<p>This device is composed of the <a href="#LCG">LCG pseudo-random generator</a> generator, a <a href="#uuid">ID-generator</a>, and the basic form of the bus negotiator.</p>
+<h3>Overview</h3>
+<ul>
+<li>Request/Release access to the <a href="#shared-buses">shared bus</a></li>
+<li>Automatic retry until access is obtained</li>
+<li>Random retry-delay to avoid deadlocks</li>
+</ul>
+<h3>Usage examples</h3>
+<ul>
+<li>Lock the bus for manual manipulation</li>
+<li>Enables design of non-centralized devices</li>
+</ul>
+<h3>Usage Details</h3>
+<h4>Initial setup</h4>
+<ol>
+<li>Put the train in <em>automatic</em> mode and have it wait at the station (see <a href="#uuid">ID-generation</a>)</li>
+<li>Start the device by putting it into <em>idle</em> mode by toggling the state-seeding combinator on/off.<ul>
+<li><span onclick="document.getElementById('bus-negotiator-seed-rect').classList.toggle('invisible')" style="cursor: pointer"><strong>Click to show in image</strong></span></li>
+</ul>
+</li>
+<li>Connect it to the control bus :factorio-red_network:</li>
+</ol>
+<h4>Bus interaction</h4>
+<p>See the details of the <a href="#shared-access-negotiation">shared bus protocol</a></p>
+<h4>Picture</h4>
+<div class="img-host">
+
+![Complete bus negotiator](factorio-bus-negotiator-complete.png)
+
+
+  <svg viewBox="0 0 395 413" style="position:absolute; top:0; left:0;" id="asd">
+    <rect x="175" y="315" width="30" height="30" style="fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9" id="bus-negotiator-seed-rect" class="invisible"/>
+    <rect x="20" y="65" width="35" height="55" style="fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9" id="bus-negotiator-control-port-rect" class="invisible"/>
+    <rect x="20" y="110" width="35" height="35" style="fill:blue;stroke:pink;stroke-width:5;fill-opacity:0.1;stroke-opacity:0.9" id="bus-negotiator-state-rect" class="invisible"/>
+  </svg>
+</div>
+
+<h4>Data ports</h4>
+<p>The data ports have been <a href="#diode">gated</a> to prevent accidental signal corruptions.</p>
+<ul>
+<li>
+<p>Control: There are constant combinators predefined that can be used to request/release access to the bus.
+    These supply :factorio-signal_R: to request, and :factorio-signal_D: (done) to release.</p>
+<ul>
+<li><span onclick="document.getElementById('bus-negotiator-control-port-rect').classList.toggle('invisible')" style="cursor: pointer"><strong>Click to show in image</strong></span></li>
+</ul>
+</li>
+<li>
+<p>Output: A constant combinator can be used to extract the state if you want to hook up your own logic. The state signals are all in the range <code>[0,1]</code>.</p>
+<ul>
+<li><span onclick="document.getElementById('bus-negotiator-state-rect').classList.toggle('invisible')" style="cursor: pointer"><strong>Click to show in image</strong></span></li>
+<li>:factorio-signal_I: - Idle state.</li>
+<li>:factorio-signal_A: - Aquire state.</li>
+<li>:factorio-signal_T: - Try state.</li>
+<li>:factorio-signal_W: - Wait state.</li>
+<li>:factorio-signal_M: - Master state.</li>
+</ul>
+</li>
+</ul>
+<h4>Signal Lamps</h4>
+<p>Counting from left to right</p>
+<table>
+<thead>
+<tr>
+<th>Color and location</th>
+<th>Description</th>
+<th>Signal to enable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>:factorio-signal_cyan:   Upper row, 1st</td>
+<td>Idle state</td>
+<td>:factorio-signal_I: = 1</td>
+</tr>
+<tr>
+<td>:factorio-signal_yellow: Upper row, 2nd</td>
+<td>Aquire state</td>
+<td>:factorio-signal_A: = 1</td>
+</tr>
+<tr>
+<td>:factorio-signal_pink:   Upper row, 3rd</td>
+<td>Try state</td>
+<td>:factorio-signal_T: = 1</td>
+</tr>
+<tr>
+<td>:factorio-signal_red:    Upper row, 4th</td>
+<td>Wait state</td>
+<td>:factorio-signal_W: = 1</td>
+</tr>
+<tr>
+<td>:factorio-signal_green:  Upper row, 5th</td>
+<td>Master state. The bus is ours!!</td>
+<td>:factorio-signal_M: = 1</td>
+</tr>
+<tr>
+<td>:factorio-signal_red:    Middle</td>
+<td>Red light, indicates that there is no [ID] source yet.<br>See <em>Initial setup</em> for details.</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h1>UUID</h1>
+<p><img alt="UUID generator" src="factorio-uuid.png" /></p>
+<details><summary>Blueprint</summary>
+
+
+<div class="codehilite"><pre><span></span><code><span class="mf">0</span><span class="n">eNqlVMuOqzAM</span><span class="o">/</span><span class="n">ZWR11DxKGXEejbzAV1dVSiA20YDCUpCdauKf7829KWBKw2dDShOzrF9fJILFHWHrZHKQXYBWWplIftzASsPStQcc</span><span class="o">+</span><span class="n">cWIYOTNK6jiAdKNBwYT</span><span class="o">/</span><span class="n">hb6D2QqsK</span><span class="o">/</span><span class="n">kIW99yIyWoT8fELGi5AfT8h1v</span><span class="o">/</span><span class="n">MAlZNO4tj0sDjnqmsKNNTOA</span><span class="o">+</span><span class="mf">2</span><span class="n">MkIej8</span><span class="o">+</span><span class="n">nHpK22hNKKMxKTH3lwpt</span><span class="o">+</span><span class="mf">652</span><span class="n">K</span><span class="o">+</span><span class="n">sUR3FiZRvnW6nVIENwYPaAbO6Dov8ChOUhs</span><span class="o">+</span><span class="n">YVFVudP5QAHZXtQWPTAoqpz5WqxuW850tDMs7ls</span><span class="o">/</span><span class="n">lkeqvYZ</span><span class="o">+</span><span class="n">rEFhyfVZhoX8ORhE9ayTrFj</span><span class="o">+</span><span class="n">HZ</span><span class="o">+</span><span class="mf">3</span><span class="kr">To</span><span class="n">zNwHb7ySJPZIjvudhjTijnl7oppBKOWpzoEa6SUZF4lRB</span><span class="o">/</span><span class="n">Jc1YDmSbeYX2snZoXjFvqTt2f</span><span class="o">/</span><span class="n">AbG084XjD0hOMFa084BpNLm</span><span class="o">+</span><span class="n">uba5YMN</span><span class="o">+</span><span class="n">Lhzsxyfc9daxqidvKE</span><span class="o">/</span><span class="mf">70</span><span class="n">VwSrepOF7ymPURhLV1SpcpMNmqKHU3GMylyxZegujOZbNQpZgjiRdSEKVkPq2PGLV1dc35qEYr9dP</span><span class="o">+</span><span class="mf">6</span><span class="n">N1v12k3TA</span><span class="o">/</span><span class="n">kokij6fag1oUWF9PvTVfq4hiJ</span><span class="o">/</span><span class="n">L</span><span class="o">/</span><span class="n">gE3TOAzekziMwr7</span><span class="o">/</span><span class="n">BzMG95o</span><span class="o">=</span><span class="w"></span>
+</code></pre></div>
+
+
+
+</details>
+
+<p>This blueprint generates a game-unique ID on the :factorio-info: signal.</p>
+<p>The ID is 100% guaranteed to not collide, so it can be safely used to give ID's to devices and circuits without having to do central book-keeping, and it makes blueprinting easy.</p>
+<h4>Initial setup</h4>
+<p>Just put the train in automatic mode and you are set.</p>
+<hr />
+<h1>Misc</h1>
+<h3>Diodes / Gating {#diode}</h3>
+<p>It is sometimes important to prevent back-propagation of signals to prevent accidental state corruption and isolate circuits.</p>
+<p>This can easily be achieved with arithmetic combinators. To only allow :factorio-signal_A: to travel in one direction, simply do :factorio-signal_A: = :factorio-signal_A: + <code>0</code>.</p>
+<p>If you want to allow all signals through, instead do :factorio-signal_each: = :factorio-signal_each: + <code>0</code>.</p>
+<p>You might do <code>* 1</code> as well, but I find it easier to spot diodes when using <code>+ 0</code>.</p>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="factorio-train-belts.html">Trains as belts?</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2021-12-18-wsl-serials.html">WSL2 & USB Serials</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: factorio
+    <ul>
+    
+        <li>
+            Next: <a href="factorio-train-belts.html">Trains as belts?</a>
+        </li>
+    
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

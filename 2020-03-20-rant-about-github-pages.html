@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Github pages - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>Ok, so <a href="https://pages.github.com/">Github Pages</a> are <abbr title="I am cool">cool</abbr>. But unfortunately not as straightforward to get going as one might like.</p>
+<p>At least not when you just want to host some files and let github do the <a href="https://help.github.com/en/github/working-with-github-pages/setting-up-a-github-pages-site-with-jekyll">Jekyll</a>-lifting for you.
+Preferably you'd just clone/fork an existing repository and BAM you'd have everything set up, ready to edit.</p>
+<p>But <em>noooooo</em>, you need to install a lot of crap locally just in order to run a <code>jekyll init</code> command to generate some boilerplate files.
+And the instructions for doing that is spread out all over the place. You need to collect them and figure out the missing crap,
+ because god help you if you happen to get the wrong version of a dependency installed!</p>
+<p>For the convenience of myself and others, I'm writing this blog post and linking a version of my own crap that is ready to be cloned.</p>
+<p><a href="https://github.com/DrInfiniteExplorer/drinfiniteexplorer.github.io/tree/7b9d50b3f4fc6f51042776edb96079e3985e1715">This</a> is my repo and the specific git commit you'd want to start from.
+Easiest is probably to just <a href="https://github.com/DrInfiniteExplorer/drinfiniteexplorer.github.io/archive/7b9d50b3f4fc6f51042776edb96079e3985e1715.zip">download a copy</a> of the files and put into your own repo.</p>
+<p>If you want to run Jekyll locally you still need to install crap.
+These are the instructions I compiled through some experimentation.
+I'm running Ubuntu-18.04</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Install things we need</span>
+sudo apt update
+sudo apt install ruby-full make gcc build-essential zlib1g-dev
+
+<span class="c1"># Add configuration of where to store ruby gems into .bashrc</span>
+<span class="c1">#  Probably better to make a local environment for just the Jekyll instance tho.</span>
+<span class="nb">echo</span> <span class="s1">&#39;# Install Ruby Gems to ~/gems&#39;</span> &gt;&gt; ~/.bashrc
+<span class="nb">echo</span> <span class="s1">&#39;export GEM_HOME=&quot;$HOME/gems&quot;&#39;</span> &gt;&gt; ~/.bashrc
+<span class="nb">echo</span> <span class="s1">&#39;export PATH=&quot;$HOME/gems/bin:$PATH&quot;&#39;</span> &gt;&gt; ~/.bashrc
+<span class="nb">source</span> ~/.bashrc
+
+<span class="c1"># Install bundler tool</span>
+gem install bundler
+
+mkdir blog
+<span class="nb">cd</span> blog
+
+<span class="c1"># This is an important first step as otherwise you might end up with crappy version problems</span>
+<span class="nb">echo</span> <span class="s2">&quot;source &#39;https://rubygems.org&#39;&quot;</span> &gt; Gemfile
+<span class="nb">echo</span> <span class="s2">&quot;gem &#39;github-pages&#39;&quot;</span> &gt;&gt; Gemfile
+bundle install
+
+<span class="c1"># --force to overwrite the existing Gemfile</span>
+bundle <span class="nb">exec</span> jekyll new . --force
+
+<span class="c1"># Open the `Gemfile`, comment out `gem &quot;Jekyll&quot;` and comment in `gem &quot;github-pages&quot;` as is instructed in the gemfile.</span>
+bundle update
+</code></pre></div>
+
+<p>There you have it, that's a lot to do to create a handful of boring files.</p>
+<h1>Edit 2020-03-21</h1>
+<p>I have since yesterday abandoned letting github build the site.
+It is now built with jekyll by myself. Github is just the host.
+My main reason for doing it so quickly is because apparently the <code>github-pages</code>-gem disables the plugin-functionality of Jekyll.</p>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="2020-03-21-hdl-synthesis-notes.html">HDL synthezis notes</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="index.html">Ye boi</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: blog
+    <ul>
+    
+        <li>
+            Next: <a href="2020-03-21-hdl-synthesis-notes.html">HDL synthezis notes</a>
+        </li>
+    
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

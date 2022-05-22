@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Toolbars in UE4 - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>I have figured out that extending/customizing the editor toolbar in UE4 sucks.</p>
+<p>Why does it suck?</p>
+<ul>
+<li>Limited and undocumented API for working with the toolbars</li>
+<li>Lots of shit is hardcoded c++ and can't be extended without recompiles.</li>
+<li>The straightforward method to <em>add</em> things work, but...</li>
+<li>There are extension hooks that can insert things</li>
+<li>There are dynamic entries which insert things</li>
+<li>The model is convoluted and can't be controlled</li>
+</ul>
+<h3>Ok, so what is the model?</h3>
+<hr />
+<p>There are</p>
+<ul>
+<li><em>Menus</em> - These can contain entries of sorts</li>
+<li><em>Sections</em> - A grouping within a menu</li>
+<li><em>Entries</em> - Like a button or menu-entry</li>
+</ul>
+<p>A simplified model would be</p>
+<div class="codehilite"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">File</span><span class="w"></span>
+<span class="w">  </span><span class="nt">sections</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Saves and stuff</span><span class="w"></span>
+<span class="w">      </span><span class="nt">entries</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">New</span><span class="w"></span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Save</span><span class="w"></span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Load</span><span class="w"></span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"></span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Quit</span><span class="w"></span>
+<span class="w">      </span><span class="nt">entries</span><span class="p">:</span><span class="w"></span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Restart</span><span class="w"></span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Quit</span><span class="w"></span>
+</code></pre></div>
+
+<p>This is the 'source' model, which is copied and extended as it is turned into UI elements.</p>
+<h3>Extensions and turning into UI</h3>
+<hr />
+<p>An extension or hook can be triggered with information like <code>File.New</code> and decide to add it's own entry <code>File.NewFromTemplate</code>.</p>
+<div class="admonition note">
+<p>This makes it impossible to adjust the original model to remove such extensions without removing <code>File.New</code>.</p>
+</div>
+<p>There are also dynamic sections (or entries?) which are invoked during UI-model-preparation.
+I kind of understand these, since one might want to hide buttons or entries depending on the environment (available compilers, etc etc).</p>
+<p>Though this seems like a redundant feature and system, when one could instead extend the entries themselves with callbacks to determine whether they should be visible or enabled instead. 🤔</p>
+<h3>UE4 menu customization</h3>
+<hr />
+<p>In 4.26 it seems that an experimental menu editing feature was added. The <em>only</em> documentation is some bloke mentioning it <a href="https://twitter.com/milkyengineer/status/1379644279480446982?lang=en">in a twitter thread</a>.
+It works by doing a post-process of the assembled model (after dynamics, but before hooks?). It can do visibility overrides, and even reorder entries.</p>
+<p>It can still not deal with entries added by hooks, which severly limits the usability.</p>
+<p>The feature is incomplete, in 4.26.2 at least. There is an embryo of implementing a save to the per-project-user-settings, but it has no effect.</p>
+<h3>Overall verdict?</h3>
+<hr />
+<p>There <em>are</em> some methods which are clearly implemented to extend the system a tiny bit for BPs and python. But what good is that when the overall toolbars can't be controlled and there is limited pixel real estate?</p>
+<p>The effect is exacerbated by the UI design in the editor itself, as one can only choose between ridiculously large toolbar buttons, or tiny buttons without help.</p>
+<p>You know what's an easier solution?</p>
+<ul>
+<li>Make a <a href="https://docs.unrealengine.com/4.27/en-US/InteractiveExperiences/UMG/UserGuide/EditorUtilityWidgets/">dockable widget</a></li>
+<li>Add buttons to it</li>
+<li>Dock it</li>
+<li>Hide the tab</li>
+<li>Boom! 💣💥 (haha) - Now you've got a better toolbar that is easier to work with and extend than the toolbar from Epic 😒</li>
+</ul>
+<h4>References</h4>
+<hr />
+<ul>
+<li>Emperor of Wisdom - <a href="https://blog-l0v0-com.translate.goog/posts/fe336621.html?_x_tr_sl=auto&amp;_x_tr_tl=en&amp;_x_tr_hl=en-US&amp;_x_tr_pto=wapp">ToolMenuEntryScript</a></li>
+</ul>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="ue4-notes.html">UE4 Notes</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="things-to-print.html">Things to print</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: ue4
+    <ul>
+    
+        <li>
+            Next: <a href="ue4-notes.html">UE4 Notes</a>
+        </li>
+    
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>

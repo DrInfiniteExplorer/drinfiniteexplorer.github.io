@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    
+    <link rel="stylesheet" href="codehilite_styles.css" />
+    <link rel="stylesheet" href="simple-v1.css" />
+    <link rel="stylesheet" href="stuff.css" />
+    <title>Building & flashing Ender5 Pro firmware - Siffer</title>
+    
+</head>
+<body>
+    <div id="headyboi"><a href="/">Siffer</a></div>
+    <div id="content">
+<p>So I went and bought and Ender5 Pro to learn how to 3d-print stuff.</p>
+<p>Unfortunately my bed (the thing you print on) is <em>warped</em>, which leads to bad print results.
+The printer expects the bed to be without curvature and to have an even distance to the extruder.
+For me and many other owners of Ender5 (Pro), the stock bed has slightly raised edges (or a lower center).</p>
+<p>Most videos and guides for how to deal with this on the internet just says to perform <a href="https://all3dp.com/2/mesh-bed-leveling-all-you-need-to-know/">Mesh bed leveling</a>.</p>
+<p>Unfortunately the stock firmware is old and does not contain this feature, so we need to build our own.
+The stock firmware version for me was <code>1.1.6.3</code>, but I'm building version <code>2.0.7.2</code>.</p>
+<ul>
+<li>The stock firmware is called <a href="https://github.com/MarlinFirmware/Marlin">Marlin</a></li>
+<li>The control board we flash is called <a href="https://reprap.org/wiki/Melzi">Melzi</a>. The actual board seems to be a Creality-specific version as it looks different from what is on that wiki. (mine is version 1.1.5, which is printed on the PCB)</li>
+<li>I'm using <a href="https://marlinfw.org/docs/basics/install_platformio_cli.html">PlatformIO</a> to build the FW</li>
+<li>Using an <a href="https://octoprint.org/">OctoPi</a> with the <a href="https://plugins.octoprint.org/plugins/firmwareupdater/">Firmware updater</a> plugin<ul>
+<li>This also requires you to install <code>avrdude</code> with <code>sudo apt-get install avrdude</code> (on the octopi)</li>
+</ul>
+</li>
+</ul>
+<p>I downloaded the 2.0.x sources from <a href="https://marlinfw.org/docs/basics/install.html">this site</a> and decided to do a command-line build with <a href="https://marlinfw.org/docs/basics/install_platformio_cli.html">PlatformIO</a> instead of the more common vscode/arduino-studio-alternatives.
+First I started with arduino studio through <a href="https://github.com/tombenke/darduino">Darduino</a> but clicking interfaces blindly is not my style, so I adapted the dockerfile and shell-script for <a href="https://marlinfw.org/docs/basics/install_platformio_cli.html">PlatformIO</a> instead. You can find my modified files at the end of this post.</p>
+<p>When the docker is built and running, we need to configure the firmware for the board.
+Download a pair of "standard" <a href="https://github.com/MarlinFirmware/Configurations/tree/import-2.0.x/config/examples/Creality/Ender-5%20Pro/CrealityV1">Ender5 Pro config files</a> from github and put into the <code>Marlin</code> directory (overwrite/replace the existing <code>Configuration.h</code> and <code>Configuration_adv.h</code>).</p>
+<p>Then browse to the Marlin root directory (which contains <code>platformio.ini</code>) and run <code>platformio run -e melzi_optimized</code> to build the firmware.
+The resulting hex-file can be found in <code>./.pio/build/melzi_optimized/firmware.hex</code> and is needed for OctoPi.</p>
+<p>The OctoPi-plugin needs to be configured with the right programmer and CPU.</p>
+<p><img alt="FW-plugin-config" src="fw-plugin-config.gif" /></p>
+<p>Then you just select the hex-file and flash. Wooh!</p>
+<p>Before I started hacking with mesh bed leveling configuration, I made sure to verify that this flashed and ran properly.</p>
+<p>Then we <em>just</em> have to configure the firmware for our usecase.
+<a href="https://marlinfw.org/docs/gcode/G029.html">G29 - Bed Leveling documentation</a> goes into details about different schemes, how to configure them, and how to use them.</p>
+<p>I've decided to go for manual bed leveling, with 5x5 measurement points, and LCD menu to help out measurements.</p>
+<ul>
+<li><code>#define MESH_BED_LEVELING</code></li>
+<li><code>#define RESTORE_LEVELING_AFTER_G28</code> to not loose config after auto-home</li>
+<li><code>#define GRID_MAX_POINTS_X 5</code> inside the proper ifdef</li>
+<li><code>#define LCD_BED_LEVELING</code></li>
+</ul>
+<p>But unfortunately this makes the firmware to large. We need to remove some features to make it small enough for our needs.</p>
+<p>Teaching Tech details some thins to turn off in this video about <a href="https://youtu.be/sUlqrSq6LeY?t=526">BLTouch in Ender3</a>.
+Great videos, but I want data easily accessible so I'm listing what can be configured here:</p>
+<ul>
+<li><code>#define SPEAKER</code> - Not removed</li>
+<li><code>#define SHOW_BOOTSCREEN</code> - Removed</li>
+<li><code>#define ARC_SUPPORT</code> in <code>Condifuration_adv.h</code> - Not removed, non-linear movements are cool AF</li>
+<li><code>#define DISABLE_M503</code> - Already removed</li>
+<li><code>#define EEPROM_CHITCHAT</code> - Not removed</li>
+<li><code>#define SLIM_LCD_MENUS</code> - Enabled</li>
+</ul>
+<p>After having flashed this I preheated for PLA(Cause temperature and size) and performed "manual" leveling of the bed, in an attempt to orient the bed before doing mesh leveling.</p>
+<p>Then I did a leveling using the LCD and boy is the bed not level!</p>
+<p>After storing the settings I ran <code>G29 S0</code> via OctoPi to get a printout of the measured bed values.
+This will enable me to quickly restore them, should I need to wipe EEPROM sometime.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Send</span><span class="o">:</span><span class="w"> </span><span class="n">G29</span><span class="w"> </span><span class="n">S0</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w"> </span><span class="n">Mesh</span><span class="w"> </span><span class="n">Bed</span><span class="w"> </span><span class="n">Leveling</span><span class="w"> </span><span class="n">OFF</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w"> </span><span class="mi">5</span><span class="n">x5</span><span class="w"> </span><span class="n">mesh</span><span class="o">.</span><span class="w"> </span><span class="n">Z</span><span class="w"> </span><span class="n">offset</span><span class="o">:</span><span class="w"> </span><span class="mf">0.00000</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w"> </span><span class="n">Measured</span><span class="w"> </span><span class="n">points</span><span class="o">:</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w">         </span><span class="mi">0</span><span class="w">        </span><span class="mi">1</span><span class="w">        </span><span class="mi">2</span><span class="w">        </span><span class="mi">3</span><span class="w">        </span><span class="mi">4</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w">  </span><span class="mi">0</span><span class="w"> </span><span class="o">-</span><span class="mf">0.07500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.12500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.12500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.12500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.02500</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w">  </span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="mf">0.07500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.12500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.12500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.12500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.02500</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w">  </span><span class="mi">2</span><span class="w"> </span><span class="o">-</span><span class="mf">0.07500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.12500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.15000</span><span class="w"> </span><span class="o">-</span><span class="mf">0.12500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.00000</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w">  </span><span class="mi">3</span><span class="w"> </span><span class="o">-</span><span class="mf">0.05000</span><span class="w"> </span><span class="o">-</span><span class="mf">0.15000</span><span class="w"> </span><span class="o">-</span><span class="mf">0.17500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.15000</span><span class="w"> </span><span class="o">-</span><span class="mf">0.02500</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w">  </span><span class="mi">4</span><span class="w"> </span><span class="o">-</span><span class="mf">0.05000</span><span class="w"> </span><span class="o">-</span><span class="mf">0.17500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.22500</span><span class="w"> </span><span class="o">-</span><span class="mf">0.20000</span><span class="w"> </span><span class="o">-</span><span class="mf">0.05000</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w"> </span>
+<span class="n">Recv</span><span class="o">:</span><span class="w"> </span><span class="n">X</span><span class="o">:</span><span class="mf">220.00</span><span class="w"> </span><span class="n">Y</span><span class="o">:</span><span class="mf">220.00</span><span class="w"> </span><span class="n">Z</span><span class="o">:</span><span class="mf">0.00</span><span class="w"> </span><span class="n">E</span><span class="o">:</span><span class="mf">0.00</span><span class="w"> </span><span class="n">Count</span><span class="w"> </span><span class="n">X</span><span class="o">:</span><span class="mi">17600</span><span class="w"> </span><span class="n">Y</span><span class="o">:</span><span class="mi">17600</span><span class="w"> </span><span class="n">Z</span><span class="o">:</span><span class="mi">0</span><span class="w"></span>
+<span class="n">Recv</span><span class="o">:</span><span class="w"> </span><span class="n">ok</span><span class="w"></span>
+</code></pre></div>
+
+<p>Ayy lmao no wonder my initial prints didn't look too good.</p>
+<details>
+<summary>
+Dockerfile
+</summary>
+
+
+<div class="codehilite"><pre><span></span><code><span class="k">FROM</span><span class="w"> </span><span class="s">ubuntu:16.04</span>
+
+<span class="k">ENV</span><span class="w"> </span>HOME /home/developer
+<span class="k">WORKDIR</span><span class="w"> </span><span class="s">/home/developer</span>
+
+<span class="c"># Replace 1000 with your user / group id</span>
+<span class="k">RUN</span><span class="w"> </span><span class="nb">export</span> <span class="nv">uid</span><span class="o">=</span><span class="m">1000</span> <span class="nv">gid</span><span class="o">=</span><span class="m">1000</span> <span class="o">&amp;&amp;</span> <span class="se">\</span>
+    mkdir -p /home/developer <span class="o">&amp;&amp;</span> <span class="se">\</span>
+    mkdir -p /etc/sudoers.d <span class="o">&amp;&amp;</span> <span class="se">\</span>
+    <span class="nb">echo</span> <span class="s2">&quot;developer:x:</span><span class="si">${</span><span class="nv">uid</span><span class="si">}</span><span class="s2">:</span><span class="si">${</span><span class="nv">gid</span><span class="si">}</span><span class="s2">:Developer,,,:/home/developer:/bin/bash&quot;</span> &gt;&gt; /etc/passwd <span class="o">&amp;&amp;</span> <span class="se">\</span>
+    <span class="nb">echo</span> <span class="s2">&quot;developer:x:</span><span class="si">${</span><span class="nv">uid</span><span class="si">}</span><span class="s2">:&quot;</span> &gt;&gt; /etc/group <span class="o">&amp;&amp;</span> <span class="se">\</span>
+    <span class="nb">echo</span> <span class="s2">&quot;developer ALL=(ALL) NOPASSWD: ALL&quot;</span> &gt; /etc/sudoers.d/developer <span class="o">&amp;&amp;</span> <span class="se">\</span>
+    chmod <span class="m">0440</span> /etc/sudoers.d/developer <span class="o">&amp;&amp;</span> <span class="se">\</span>
+    chown <span class="si">${</span><span class="nv">uid</span><span class="si">}</span>:<span class="si">${</span><span class="nv">gid</span><span class="si">}</span> -R /home/developer <span class="o">&amp;&amp;</span> <span class="se">\</span>
+    apt-get update <span class="se">\</span>
+    <span class="o">&amp;&amp;</span> apt-get install -y <span class="se">\</span>
+        software-properties-common 
+
+<span class="k">RUN</span><span class="w"> </span>apt install -y python3-pip python3-tk
+<span class="k">RUN</span><span class="w"> </span>pip3 install -U platformio
+
+<span class="k">ENV</span><span class="w"> </span>LC_ALL C.UTF-8
+<span class="k">ENV</span><span class="w"> </span>LANG C.UTF-8
+<span class="k">ENV</span><span class="w"> </span>DISPLAY :1.0
+
+<span class="k">USER</span><span class="w"> </span><span class="s">developer</span>
+</code></pre></div>
+
+
+
+</details>
+<p><br></p>
+<details>
+<summary>
+platformio.sh
+</summary>
+
+
+<div class="codehilite"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+
+docker build -t yolo:yeet . <span class="o">&amp;&amp;</span> <span class="se">\</span>
+docker run <span class="se">\</span>
+    -it <span class="se">\</span>
+    --rm <span class="se">\</span>
+    -e <span class="nv">DISPLAY</span><span class="o">=</span><span class="nv">$DISPLAY</span> <span class="se">\</span>
+    -v /tmp/.X11-unix:/tmp/.X11-unix <span class="se">\</span>
+    -v /dev:/dev <span class="se">\</span>
+    -v <span class="nv">$HOME</span>/topics:/topics <span class="se">\</span>
+    -v <span class="nv">$HOME</span>/topics/platformio:/home/developer/platformio <span class="se">\</span>
+    --name platformio <span class="se">\</span>
+    yolo:yeet
+</code></pre></div>
+
+
+
+</details>
+<p><br></p>
+<p>Other sources:</p>
+<p><a href="https://www.youtube.com/watch?v=aQIg9zxuCvM">Teaching Techs guide</a></p>
+
+<hr>
+
+Chronological (or something ¯\_(ツ)_/¯ )
+    <ul>
+    
+            <li>
+            Next: <a href="2020-11-21-bed-level-script.html">Bed level script</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-05-11-windows-containers.html">Windows Container notes</a>
+        </li>
+    
+    </ul>
+
+
+
+Category: blog
+    <ul>
+    
+        <li>
+            Next: <a href="2020-11-21-bed-level-script.html">Bed level script</a>
+        </li>
+    
+    
+        <li>
+            Prev: <a href="2020-05-11-windows-containers.html">Windows Container notes</a>
+        </li>
+    
+    </ul>
+
+</div>
+    <div id="footer">
+        
+        
+    </div>
+</body>
+</html>
