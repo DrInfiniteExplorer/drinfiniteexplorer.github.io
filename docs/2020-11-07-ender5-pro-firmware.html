@@ -5,13 +5,21 @@
     <meta charset="UTF-8">
 
     
-    <link rel="stylesheet" href="codehilite_styles.css" />
-    <link rel="stylesheet" href="simple-v1.css" />
-    <link rel="stylesheet" href="stuff.css" />
+    <link rel="stylesheet" href="index/codehilite_styles.css" />
+    <link rel="stylesheet" href="index/simple-v1.css" />
+    <link rel="stylesheet" href="index/stuff.css" />
+    <link rel="stylesheet" href="index/clickyimg.css" />
+    <script src="index/clickyimg.js" defer></script> 
+    <style></style>
     <title>Building & flashing Ender5 Pro firmware - Siffer</title>
     
 </head>
 <body>
+    <div id="ClickyImage" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="img01">
+        <div id="caption"></div>
+    </div>
     <div id="headyboi"><a href="/">Siffer</a></div>
     <div id="content">
 <p>So I went and bought and Ender5 Pro to learn how to 3d-print stuff.</p>
@@ -37,7 +45,7 @@ Download a pair of "standard" <a href="https://github.com/MarlinFirmware/Configu
 <p>Then browse to the Marlin root directory (which contains <code>platformio.ini</code>) and run <code>platformio run -e melzi_optimized</code> to build the firmware.
 The resulting hex-file can be found in <code>./.pio/build/melzi_optimized/firmware.hex</code> and is needed for OctoPi.</p>
 <p>The OctoPi-plugin needs to be configured with the right programmer and CPU.</p>
-<p><img alt="FW-plugin-config" src="fw-plugin-config.gif" /></p>
+<p><img alt="FW-plugin-config" src="2020-11-07-ender5-pro-firmware/fw-plugin-config.gif" /></p>
 <p>Then you just select the hex-file and flash. Wooh!</p>
 <p>Before I started hacking with mesh bed leveling configuration, I made sure to verify that this flashed and ran properly.</p>
 <p>Then we <em>just</em> have to configure the firmware for our usecase.

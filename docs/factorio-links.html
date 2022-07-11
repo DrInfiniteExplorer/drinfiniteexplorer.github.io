@@ -5,13 +5,21 @@
     <meta charset="UTF-8">
 
     
-    <link rel="stylesheet" href="codehilite_styles.css" />
-    <link rel="stylesheet" href="simple-v1.css" />
-    <link rel="stylesheet" href="stuff.css" />
+    <link rel="stylesheet" href="index/codehilite_styles.css" />
+    <link rel="stylesheet" href="index/simple-v1.css" />
+    <link rel="stylesheet" href="index/stuff.css" />
+    <link rel="stylesheet" href="index/clickyimg.css" />
+    <script src="index/clickyimg.js" defer></script> 
+    <style></style>
     <title>Factorio-related links - Siffer</title>
     
 </head>
 <body>
+    <div id="ClickyImage" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="img01">
+        <div id="caption"></div>
+    </div>
     <div id="headyboi"><a href="/">Siffer</a></div>
     <div id="content">
 <p>Factorio fuck yea!</p>
@@ -34,8 +42,8 @@ Only to realize that VHDL/Verilog isn't a good match for factorio, as the circui
     However, if a thing is lacking materials right now, it can't be scheduled.
     If there are Y such failed attempts in a tick, queueing is abandoned for the tick.
     Increase these limits in the console (<code>/c &lt;command&gt;</code>)</p>
-<p><code>game.player.force.max_successful_attempts_per_tick_per_construction_queue = 20
-game.player.force.max_failed_attempts_per_tick_per_construction_queue = 20</code></p>
+<p><code>/c game.player.force.max_successful_attempts_per_tick_per_construction_queue = 20
+/c game.player.force.max_failed_attempts_per_tick_per_construction_queue = 20</code></p>
 </li>
 </ul>
 

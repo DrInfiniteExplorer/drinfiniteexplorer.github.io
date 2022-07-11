@@ -1,0 +1,43 @@
+.invisible {
+  visibility: hidden;
+}
+
+.img-host {
+  position: relative;
+  display:inline-block;
+}
+
+.img-host img {
+  display:block;
+}
+
+.img-host > p {
+
+margin:0px !important;
+padding:0px;
+}
+
+.admonition {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin: 20px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  text-align: left;
+}
+
+
+.admonition.note {
+  background-color: #fffeec;
+  border-color: orange;
+}
+
+.admonition.note p::before {
+  content: "❗ ";
+}
+
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}

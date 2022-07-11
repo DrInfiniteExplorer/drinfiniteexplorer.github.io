@@ -5,13 +5,21 @@
     <meta charset="UTF-8">
 
     
-    <link rel="stylesheet" href="codehilite_styles.css" />
-    <link rel="stylesheet" href="simple-v1.css" />
-    <link rel="stylesheet" href="stuff.css" />
+    <link rel="stylesheet" href="index/codehilite_styles.css" />
+    <link rel="stylesheet" href="index/simple-v1.css" />
+    <link rel="stylesheet" href="index/stuff.css" />
+    <link rel="stylesheet" href="index/clickyimg.css" />
+    <script src="index/clickyimg.js" defer></script> 
+    <style></style>
     <title>Factorio designs, pt 1 - Siffer</title>
     
 </head>
 <body>
+    <div id="ClickyImage" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="img01">
+        <div id="caption"></div>
+    </div>
     <div id="headyboi"><a href="/">Siffer</a></div>
     <div id="content">
 <p>Time to write some stuff. :factorio-gun-turret:</p>
@@ -27,7 +35,7 @@
 
 <h1>Bus network overview</h1>
 <p>It is a common pattern to add green and red circuits to the power grid in rail network blueprints</p>
-<p><img alt="A large power pole, with green and red circuits connected" src="factorio-bus.png" /></p>
+<p><img alt="A large power pole, with green and red circuits connected" src="factorio-designs-1/factorio-bus.png" /></p>
 <p>The green and red circuit networks have been allocated to</p>
 <ul>
 <li>
@@ -120,7 +128,7 @@ This is purely done for debugging purposes. During the ownership, the :factorio-
 </table>
 <hr />
 <h1>Addressable memory circuit</h1>
-<p><img alt="Addressable Memory" src="factorio-addressable-memory.png" /></p>
+<p><img alt="Addressable Memory" src="factorio-designs-1/factorio-addressable-memory.png" /></p>
 <details>
 
 <summary>
@@ -229,7 +237,7 @@ As factorio has discrete ticks, this means that the data sampled is from the las
 <h4>Picture</h4>
 <div class="img-host">
 
-![Complete bus negotiator](factorio-bus-negotiator-complete.png)
+![Complete bus negotiator](factorio-designs-1/factorio-bus-negotiator-complete.png)
 
 
   <svg viewBox="0 0 395 413" style="position:absolute; top:0; left:0;" id="asd">
@@ -306,7 +314,7 @@ As factorio has discrete ticks, this means that the data sampled is from the las
 </table>
 <hr />
 <h1>UUID</h1>
-<p><img alt="UUID generator" src="factorio-uuid.png" /></p>
+<p><img alt="UUID generator" src="factorio-designs-1/factorio-uuid.png" /></p>
 <details><summary>Blueprint</summary>
 
 
@@ -340,7 +348,7 @@ Chronological (or something ¯\_(ツ)_/¯ )
     
     
         <li>
-            Prev: <a href="2021-12-18-wsl-serials.html">WSL2 & USB Serials</a>
+            Prev: <a href="2022-07-11-millstone-quarry.html">Visiting a millstone quarry</a>
         </li>
     
     </ul>

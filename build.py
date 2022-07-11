@@ -1,6 +1,7 @@
-
+import re
 import pathlib
 import copy
+from PIL import Image, ExifTags
 
 import jinja2
 import markdown
@@ -25,12 +26,24 @@ def read_frontmatter(pathy):
 
 
 def load_post(post_path, config):
-    print(post_path.as_posix())
+    #print(post_path.as_posix())
 
     post = read_frontmatter(post_path)
-    post['raw'] = post.content
-
     stem = post_path.stem
+
+    regex = re.escape("![a](b)").replace("a", r"([^\]]*)").replace("b", "([^)]+)")
+    #print(regex)
+
+    def rewrite_img(x):
+        alt = x[1]
+        url = x[2]
+        return f"![{alt}]({stem}/{url})"
+        
+
+    post.content = re.sub(regex, rewrite_img, post.content)
+
+    post['raw'] = post.content    
+
     dest_path = f"{post_path.stem}.html"
     url = dest_path
     default_settings = dict(
@@ -54,7 +67,7 @@ def link_posts(posts, config):
 
     categories = { name:[post for post in posts if post.get('category', None) == name] for name in category_names}
 
-    print(categories)
+    #print(categories)
 
     for name, catlist in categories.items():
         for idx, post in enumerate(catlist):
@@ -115,7 +128,7 @@ def merge_conf(configs, config_key):
 def render_markdown(stuff, configs):
     md_conf = merge_conf(configs, 'markdown')
 
-    print(md_conf)
+    #print(md_conf)
     md = markdown.Markdown(**md_conf)
     return md.convert(stuff)
 
@@ -144,17 +157,40 @@ def copy_statics(posts):
     out_root = pathlib.Path("docs")
     for post in posts:
         static_root = post['orig_file_path'].parent / "static"
-        print(f"Globbing in {static_root.as_posix()}")
+        #print(f"Globbing in {static_root.as_posix()}")
 
         for file in static_root.glob('**/*'):
             relative_path = file.relative_to(static_root).as_posix()
-            out_path = out_root / relative_path
+            out_path = out_root / post.metadata['stem'] / relative_path
 
-            print(f"Copying {file.as_posix()} to {out_path.as_posix()}")
+            #print(f"Copying {file.as_posix()} to {out_path.as_posix()}")
 
+            #print(relative_path)
             out_path.parent.mkdir(parents=True, exist_ok=True)
-            assert not out_path.exists()
-            out_path.write_bytes(file.read_bytes())
+            if(relative_path.startswith("resave_")):
+                with Image.open(file.as_posix()) as im:
+                    im.thumbnail((1920, 1080))
+                    for orientation in ExifTags.TAGS.keys():
+                        if ExifTags.TAGS[orientation]=='Orientation':
+                            break
+                    try:
+                        exif = im._getexif()
+                        if exif is not None:
+                            if exif[orientation] == 3:
+                                im=im.rotate(180, expand=True)
+                            elif exif[orientation] == 6:
+                                im=im.rotate(270, expand=True)
+                            elif exif[orientation] == 8:
+                                im=im.rotate(90, expand=True)
+                    except (AttributeError, KeyError, IndexError):
+                        # cases: image don't have getexif
+                        pass
+                    out_path = out_root / post.metadata['stem'] / relative_path.replace("resave_","")
+                    print(f"resaving to {out_path.as_posix()}")
+                    im.save(out_path.as_posix())
+            else:
+                assert not out_path.exists()
+                out_path.write_bytes(file.read_bytes())
 
 
 def main():

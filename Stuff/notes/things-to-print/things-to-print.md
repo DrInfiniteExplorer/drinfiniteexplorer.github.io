@@ -10,6 +10,7 @@ category: notes
 ### Reference videos
 
 * [Prusa slicer options]
+* [Hot new printer?](https://www.youtube.com/watch?v=6HE2ik46SFk) - X1 Carbon
 
 ### Tools and storage
 ---------------------
@@ -34,7 +35,7 @@ category: notes
 * [JWST Mirror] - Can't print tho
 * Lots of [Rockets!]
     * Saturn V
-    * Falcon [9 Crew Dragon, 9 Block 5, Heavy]
+    * <del>Falcon [9 Crew Dragon, 9 Block 5, Heavy]</del>Done
     * Ariane 5
     * Long March 2D
     * Starship SN9
@@ -46,6 +47,9 @@ category: notes
 ---------------------
 
 * [Skull]
+* [Skull2]
+* [Dalek]
+* [FlexyHand2]
 
 
 [PRusa slicer options]: https://www.youtube.com/watch?v=Z7eKL7AhzNg
@@ -64,3 +68,6 @@ category: notes
 [Rockets!]: https://www.thingiverse.com/kmobrain/designs
 
 [Skull]: https://www.thingiverse.com/thing:5197313
+[Skull2]: https://www.thingiverse.com/thing:441087
+[Dalek]: https://www.thingiverse.com/thing:4831739
+[FlexyHand2]: https://www.thingiverse.com/thing:380665

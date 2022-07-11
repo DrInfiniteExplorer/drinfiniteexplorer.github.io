@@ -28,8 +28,8 @@ Factorio fuck yea!
     Increase these limits in the console (`/c <command>`)
 
     ```
-    game.player.force.max_successful_attempts_per_tick_per_construction_queue = 20
-    game.player.force.max_failed_attempts_per_tick_per_construction_queue = 20
+    /c game.player.force.max_successful_attempts_per_tick_per_construction_queue = 20
+    /c game.player.force.max_failed_attempts_per_tick_per_construction_queue = 20
     ```
 
 

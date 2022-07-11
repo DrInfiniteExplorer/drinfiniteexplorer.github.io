@@ -21,6 +21,10 @@ category: notes
         * [linux setup instructions](https://wiki.gentoo.org/wiki/Intel_Corporation_PRO/Wireless_3945ABG)
         * Requires FW to be written to boot it?
         * No USB comms available, requires PCIEX memory mapping to communicate 😢
+    * Bluetooth module
+        * [FCC Report](https://fcc.report/FCC-ID/PIW632500516610)
+        * [RD350 pinout](https://pinoutguide.com/Electronics/dell_rd530_pinout.shtml)
+        
 
 
 ### Random links
